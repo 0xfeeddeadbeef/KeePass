@@ -1,0 +1,223 @@
+/*
+  KeePass Password Safe - The Open-Source Password Manager
+  Copyright (C) 2003-2018 Dominik Reichl <dominik.reichl@t-online.de>
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*/
+
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Threading;
+
+using KeePass.Util;
+
+using KeePassLib;
+using KeePassLib.Native;
+using KeePassLib.Utility;
+
+namespace KeePass.App
+{
+	public enum AppHelpSource
+	{
+		Local,
+		Online
+	}
+
+	/// <summary>
+	/// Application help provider. Starts an external application that
+	/// shows help on a specified topic.
+	/// </summary>
+	public static class AppHelp
+	{
+		private static string g_strLocalHelpFile = null;
+
+		/// <summary>
+		/// Get the path of the local help file.
+		/// </summary>
+		public static string LocalHelpFile
+		{
+			get
+			{
+				if(g_strLocalHelpFile == null)
+					g_strLocalHelpFile = UrlUtil.StripExtension(
+						WinUtil.GetExecutable()) + ".chm";
+
+				return g_strLocalHelpFile;
+			}
+		}
+
+		public static bool LocalHelpAvailable
+		{
+			get
+			{
+				try
+				{
+					string strFile = AppHelp.LocalHelpFile;
+					if(!string.IsNullOrEmpty(strFile))
+						return File.Exists(strFile);
+				}
+				catch(Exception) { Debug.Assert(false); }
+
+				return false;
+			}
+		}
+
+		public static AppHelpSource PreferredHelpSource
+		{
+			get
+			{
+				return (Program.Config.Application.HelpUseLocal ?
+					AppHelpSource.Local : AppHelpSource.Online);
+			}
+
+			set
+			{
+				Program.Config.Application.HelpUseLocal =
+					(value == AppHelpSource.Local);
+			}
+		}
+
+		/// <summary>
+		/// Show a help page.
+		/// </summary>
+		/// <param name="strTopic">Topic name. May be <c>null</c>.</param>
+		/// <param name="strSection">Section name. May be <c>null</c>. Must not start
+		/// with the '#' character.</param>
+		public static void ShowHelp(string strTopic, string strSection)
+		{
+			AppHelp.ShowHelp(strTopic, strSection, false);
+		}
+
+		/// <summary>
+		/// Show a help page.
+		/// </summary>
+		/// <param name="strTopic">Topic name. May be <c>null</c>.</param>
+		/// <param name="strSection">Section name. May be <c>null</c>.
+		/// Must not start with the '#' character.</param>
+		/// <param name="bPreferLocal">Specify if the local help file should be
+		/// preferred. If no local help file is available, the online help
+		/// system will be used, independent of the <c>bPreferLocal</c> flag.</param>
+		public static void ShowHelp(string strTopic, string strSection, bool bPreferLocal)
+		{
+			if(AppHelp.LocalHelpAvailable)
+			{
+				if(bPreferLocal || (AppHelp.PreferredHelpSource == AppHelpSource.Local))
+					AppHelp.ShowHelpLocal(strTopic, strSection);
+				else
+					AppHelp.ShowHelpOnline(strTopic, strSection);
+			}
+			else AppHelp.ShowHelpOnline(strTopic, strSection);
+		}
+
+		private static void ShowHelpLocal(string strTopic, string strSection)
+		{
+			string strFile = AppHelp.LocalHelpFile;
+			if(string.IsNullOrEmpty(strFile)) { Debug.Assert(false); return; }
+
+			// Unblock CHM file for proper display of help contents
+			WinUtil.RemoveZoneIdentifier(strFile);
+
+			string strCmd = "\"ms-its:" + strFile;
+			if(!string.IsNullOrEmpty(strTopic))
+			{
+				strCmd += "::/help/" + strTopic + ".html";
+
+				if(!string.IsNullOrEmpty(strSection))
+					strCmd += "#" + strSection;
+			}
+			strCmd += "\"";
+
+			if(ShowHelpLocalKcv(strCmd)) return;
+
+			string strDisp = strCmd;
+			try
+			{
+				if(NativeLib.IsUnix())
+				{
+					Process p = Process.Start(strCmd.Trim('\"'));
+					if(p != null) p.Dispose();
+				}
+				else // Windows
+				{
+					strDisp = "HH.exe " + strDisp;
+
+					Process p = Process.Start(WinUtil.LocateSystemApp("hh.exe"), strCmd);
+					if(p != null) p.Dispose();
+				}
+			}
+			catch(Exception ex)
+			{
+				MessageService.ShowWarning(strDisp, ex);
+			}
+		}
+
+		private static bool ShowHelpLocalKcv(string strQuotedMsIts)
+		{
+			try
+			{
+				if(!NativeLib.IsUnix()) return false;
+
+				string strApp = AppLocator.FindAppUnix("kchmviewer");
+				if(string.IsNullOrEmpty(strApp)) return false;
+
+				string strFile = StrUtil.GetStringBetween(strQuotedMsIts, 0, ":", "::");
+				if(string.IsNullOrEmpty(strFile))
+					strFile = StrUtil.GetStringBetween(strQuotedMsIts, 0, ":", "\"");
+				if(string.IsNullOrEmpty(strFile))
+				{
+					Debug.Assert(false);
+					return false;
+				}
+
+				string strUrl = StrUtil.GetStringBetween(strQuotedMsIts, 0, "::", "\"");
+
+				// https://www.ulduzsoft.com/linux/kchmviewer/kchmviewer-integration-reference/
+				string strArgs = "\"" + strFile + "\"";
+				if(!string.IsNullOrEmpty(strUrl))
+					strArgs = "-showPage \"" + strUrl + "\" " + strArgs;
+
+				Process p = Process.Start(strApp, strArgs);
+				if(p != null) p.Dispose();
+
+				return true;
+			}
+			catch(Exception) { Debug.Assert(false); }
+
+			return false;
+		}
+
+		private static void ShowHelpOnline(string strTopic, string strSection)
+		{
+			string strUrl = GetOnlineUrl(strTopic, strSection);
+			WinUtil.OpenUrl(strUrl, null);
+		}
+
+		internal static string GetOnlineUrl(string strTopic, string strSection)
+		{
+			string str = PwDefs.HelpUrl;
+
+			if(!string.IsNullOrEmpty(strTopic))
+			{
+				str += strTopic + ".html";
+
+				if(!string.IsNullOrEmpty(strSection))
+					str += "#" + strSection;
+			}
+
+			return str;
+		}
+	}
+}
