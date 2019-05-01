@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2018 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2019 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,7 +36,9 @@ namespace KeePassLib.Cryptography.PasswordGenerator
 		Success = 0,
 		Unknown = 1,
 		TooFewCharacters = 2,
-		UnknownAlgorithm = 3
+		UnknownAlgorithm = 3,
+		InvalidCharSet = 4,
+		InvalidPattern = 5
 	}
 
 	/// <summary>
@@ -94,48 +96,47 @@ namespace KeePassLib.Cryptography.PasswordGenerator
 			return new CryptoRandomStream(CrsAlgorithm.ChaCha20, pbKey);
 		}
 
-		internal static char GenerateCharacter(PwProfile pwProfile,
-			PwCharSet pwCharSet, CryptoRandomStream crsRandomSource)
+		internal static char GenerateCharacter(PwCharSet pwCharSet,
+			CryptoRandomStream crsRandomSource)
 		{
-			if(pwCharSet.Size == 0) return char.MinValue;
+			uint cc = pwCharSet.Size;
+			if(cc == 0) return char.MinValue;
 
-			ulong uIndex = crsRandomSource.GetRandomUInt64();
-			uIndex %= (ulong)pwCharSet.Size;
-
-			char ch = pwCharSet[(uint)uIndex];
-
-			if(pwProfile.NoRepeatingCharacters)
-				pwCharSet.Remove(ch);
-
-			return ch;
+			uint i = (uint)crsRandomSource.GetRandomUInt64(cc);
+			return pwCharSet[i];
 		}
 
-		internal static void PrepareCharSet(PwCharSet pwCharSet, PwProfile pwProfile)
+		internal static bool PrepareCharSet(PwCharSet pwCharSet, PwProfile pwProfile)
 		{
-			pwCharSet.Remove(PwCharSet.Invalid);
+			uint cc = pwCharSet.Size;
+			for(uint i = 0; i < cc; ++i)
+			{
+				char ch = pwCharSet[i];
+				if((ch == char.MinValue) || (ch == '\t') || (ch == '\r') ||
+					(ch == '\n') || char.IsSurrogate(ch))
+					return false;
+			}
 
 			if(pwProfile.ExcludeLookAlike) pwCharSet.Remove(PwCharSet.LookAlike);
 
-			if(pwProfile.ExcludeCharacters.Length > 0)
+			if(!string.IsNullOrEmpty(pwProfile.ExcludeCharacters))
 				pwCharSet.Remove(pwProfile.ExcludeCharacters);
+
+			return true;
 		}
 
-		internal static void ShufflePassword(char[] pPassword,
-			CryptoRandomStream crsRandomSource)
+		internal static void Shuffle(char[] v, CryptoRandomStream crsRandomSource)
 		{
-			Debug.Assert(pPassword != null); if(pPassword == null) return;
-			Debug.Assert(crsRandomSource != null); if(crsRandomSource == null) return;
+			if(v == null) { Debug.Assert(false); return; }
+			if(crsRandomSource == null) { Debug.Assert(false); return; }
 
-			if(pPassword.Length <= 1) return; // Nothing to shuffle
-
-			for(int nSelect = 0; nSelect < pPassword.Length; ++nSelect)
+			for(int i = v.Length - 1; i >= 1; --i)
 			{
-				ulong uRandomIndex = crsRandomSource.GetRandomUInt64();
-				uRandomIndex %= (ulong)(pPassword.Length - nSelect);
+				int j = (int)crsRandomSource.GetRandomUInt64((ulong)(i + 1));
 
-				char chTemp = pPassword[nSelect];
-				pPassword[nSelect] = pPassword[nSelect + (int)uRandomIndex];
-				pPassword[nSelect + (int)uRandomIndex] = chTemp;
+				char t = v[i];
+				v[i] = v[j];
+				v[j] = t;
 			}
 		}
 
@@ -149,7 +150,7 @@ namespace KeePassLib.Cryptography.PasswordGenerator
 			if(pwAlgorithmPool == null) return PwgError.UnknownAlgorithm;
 
 			string strID = pwProfile.CustomAlgorithmUuid;
-			if(string.IsNullOrEmpty(strID)) { Debug.Assert(false); return PwgError.UnknownAlgorithm; }
+			if(string.IsNullOrEmpty(strID)) return PwgError.UnknownAlgorithm;
 
 			byte[] pbUuid = Convert.FromBase64String(strID);
 			PwUuid uuid = new PwUuid(pbUuid);

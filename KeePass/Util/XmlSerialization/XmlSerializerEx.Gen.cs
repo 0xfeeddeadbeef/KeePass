@@ -347,6 +347,9 @@ namespace KeePass.Util.XmlSerialization
 					case "EscMinimizesToTray":
 						o.EscMinimizesToTray = ReadBoolean(xr);
 						break;
+					case "EscAction":
+						o.EscAction = ReadAceEscAction(xr);
+						break;
 					case "MinimizeToTray":
 						o.MinimizeToTray = ReadBoolean(xr);
 						break;
@@ -609,6 +612,9 @@ namespace KeePass.Util.XmlSerialization
 					case "ClipboardClearAfterSeconds":
 						o.ClipboardClearAfterSeconds = ReadInt32(xr);
 						break;
+					case "ClipboardNoPersist":
+						o.ClipboardNoPersist = ReadBoolean(xr);
+						break;
 					case "UseClipboardViewerIgnoreFormat":
 						o.UseClipboardViewerIgnoreFormat = ReadBoolean(xr);
 						break;
@@ -802,6 +808,9 @@ namespace KeePass.Util.XmlSerialization
 				{
 					case "HotKeyGlobalAutoType":
 						o.HotKeyGlobalAutoType = ReadUInt64(xr);
+						break;
+					case "HotKeyGlobalAutoTypePassword":
+						o.HotKeyGlobalAutoTypePassword = ReadUInt64(xr);
 						break;
 					case "HotKeySelectedAutoType":
 						o.HotKeySelectedAutoType = ReadUInt64(xr);
@@ -1393,6 +1402,26 @@ namespace KeePass.Util.XmlSerialization
 			return eResult;
 		}
 
+		private static Dictionary<string, KeePass.App.Configuration.AceEscAction> m_dictAceEscAction = null;
+		private static KeePass.App.Configuration.AceEscAction ReadAceEscAction(XmlReader xr)
+		{
+			if(m_dictAceEscAction == null)
+			{
+				m_dictAceEscAction = new Dictionary<string, KeePass.App.Configuration.AceEscAction>();
+				m_dictAceEscAction["None"] = KeePass.App.Configuration.AceEscAction.None;
+				m_dictAceEscAction["Lock"] = KeePass.App.Configuration.AceEscAction.Lock;
+				m_dictAceEscAction["Minimize"] = KeePass.App.Configuration.AceEscAction.Minimize;
+				m_dictAceEscAction["MinimizeToTray"] = KeePass.App.Configuration.AceEscAction.MinimizeToTray;
+				m_dictAceEscAction["Exit"] = KeePass.App.Configuration.AceEscAction.Exit;
+			}
+
+			string strValue = xr.ReadElementString();
+			KeePass.App.Configuration.AceEscAction eResult;
+			if(!m_dictAceEscAction.TryGetValue(strValue, out eResult))
+				{ Debug.Assert(false); }
+			return eResult;
+		}
+
 		private static KeePass.App.Configuration.AceToolBar ReadAceToolBar(XmlReader xr)
 		{
 			KeePass.App.Configuration.AceToolBar o = new KeePass.App.Configuration.AceToolBar();
@@ -1590,8 +1619,8 @@ namespace KeePass.Util.XmlSerialization
 
 				switch(xr.LocalName)
 				{
-					case "ShowOnlyIfTrayed":
-						o.ShowOnlyIfTrayed = ReadBoolean(xr);
+					case "ShowOnlyIfTrayedEx":
+						o.ShowOnlyIfTrayedEx = ReadBoolean(xr);
 						break;
 					case "GrayIcon":
 						o.GrayIcon = ReadBoolean(xr);

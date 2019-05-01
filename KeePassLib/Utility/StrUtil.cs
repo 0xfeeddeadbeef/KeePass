@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2018 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2019 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using System.Text.RegularExpressions;
 
 #if !KeePassUAP
 using System.Drawing;
@@ -44,45 +43,41 @@ namespace KeePassLib.Utility
 	/// </summary>
 	public sealed class CharStream
 	{
-		private string m_strString = string.Empty;
-		private int m_nPos = 0;
+		private readonly string m_str;
+		private int m_iPos = 0;
+
+		public long Position
+		{
+			get { return m_iPos; }
+			set
+			{
+				if((value < 0) || (value > int.MaxValue))
+					throw new ArgumentOutOfRangeException("value");
+				m_iPos = (int)value;
+			}
+		}
 
 		public CharStream(string str)
 		{
-			Debug.Assert(str != null);
-			if(str == null) throw new ArgumentNullException("str");
+			if(str == null) { Debug.Assert(false); throw new ArgumentNullException("str"); }
 
-			m_strString = str;
-		}
-
-		public void Seek(SeekOrigin org, int nSeek)
-		{
-			if(org == SeekOrigin.Begin)
-				m_nPos = nSeek;
-			else if(org == SeekOrigin.Current)
-				m_nPos += nSeek;
-			else if(org == SeekOrigin.End)
-				m_nPos = m_strString.Length + nSeek;
+			m_str = str;
 		}
 
 		public char ReadChar()
 		{
-			if(m_nPos < 0) return char.MinValue;
-			if(m_nPos >= m_strString.Length) return char.MinValue;
+			if(m_iPos >= m_str.Length) return char.MinValue;
 
-			char chRet = m_strString[m_nPos];
-			++m_nPos;
-			return chRet;
+			return m_str[m_iPos++];
 		}
 
 		public char ReadChar(bool bSkipWhiteSpace)
 		{
-			if(bSkipWhiteSpace == false) return ReadChar();
+			if(!bSkipWhiteSpace) return ReadChar();
 
 			while(true)
 			{
 				char ch = ReadChar();
-
 				if((ch != ' ') && (ch != '\t') && (ch != '\r') && (ch != '\n'))
 					return ch;
 			}
@@ -90,29 +85,25 @@ namespace KeePassLib.Utility
 
 		public char PeekChar()
 		{
-			if(m_nPos < 0) return char.MinValue;
-			if(m_nPos >= m_strString.Length) return char.MinValue;
+			if(m_iPos >= m_str.Length) return char.MinValue;
 
-			return m_strString[m_nPos];
+			return m_str[m_iPos];
 		}
 
 		public char PeekChar(bool bSkipWhiteSpace)
 		{
-			if(bSkipWhiteSpace == false) return PeekChar();
+			if(!bSkipWhiteSpace) return PeekChar();
 
-			int iIndex = m_nPos;
-			while(true)
+			int i = m_iPos;
+			while(i < m_str.Length)
 			{
-				if(iIndex < 0) return char.MinValue;
-				if(iIndex >= m_strString.Length) return char.MinValue;
-
-				char ch = m_strString[iIndex];
-
+				char ch = m_str[i];
 				if((ch != ' ') && (ch != '\t') && (ch != '\r') && (ch != '\n'))
 					return ch;
-
-				++iIndex;
+				++i;
 			}
+
+			return char.MinValue;
 		}
 	}
 
@@ -300,6 +291,15 @@ namespace KeePassLib.Utility
 			return ("\\u" + sh.ToString(NumberFormatInfo.InvariantInfo) + "?");
 		}
 
+		internal static bool RtfIsURtf(string str)
+		{
+			if(str == null) { Debug.Assert(false); return false; }
+
+			const string p = "{\\urtf"; // Typically "{\\urtf1\\ansi\\ansicpg65001"
+			return (str.StartsWith(p) && (str.Length > p.Length) &&
+				char.IsDigit(str[p.Length]));
+		}
+
 		public static string RtfFix(string strRtf)
 		{
 			if(strRtf == null) { Debug.Assert(false); return string.Empty; }
@@ -314,12 +314,21 @@ namespace KeePassLib.Utility
 			// https://www.microsoft.com/en-us/download/details.aspx?id=10725
 			// https://msdn.microsoft.com/en-us/library/windows/desktop/bb774284.aspx
 			// https://referencesource.microsoft.com/#System.Windows.Forms/winforms/Managed/System/WinForms/RichTextBox.cs
-			const string p = "{\\urtf"; // Typically "{\\urtf1\\ansi\\ansicpg65001"
-			if(str.StartsWith(p) && (str.Length > p.Length) &&
-				char.IsDigit(str[p.Length]))
-				str = str.Remove(2, 1); // Remove the 'u'
+			if(RtfIsURtf(str)) str = str.Remove(2, 1); // Remove the 'u'
 
 			return str;
+		}
+
+		internal static bool ContainsHighChar(string str)
+		{
+			if(str == null) { Debug.Assert(false); return false; }
+
+			for(int i = 0; i < str.Length; ++i)
+			{
+				if(str[i] > '\u00FF') return true;
+			}
+
+			return false;
 		}
 
 		/// <summary>
@@ -387,44 +396,46 @@ namespace KeePassLib.Utility
 			return str;
 		}
 
-		/// <summary>
-		/// Split up a command line into application and argument.
-		/// </summary>
-		/// <param name="strCmdLine">Command line to split.</param>
-		/// <param name="strApp">Application path.</param>
-		/// <param name="strArgs">Arguments.</param>
-		public static void SplitCommandLine(string strCmdLine, out string strApp, out string strArgs)
+		public static void SplitCommandLine(string strCmdLine, out string strApp,
+			out string strArgs)
 		{
-			Debug.Assert(strCmdLine != null); if(strCmdLine == null) throw new ArgumentNullException("strCmdLine");
+			SplitCommandLine(strCmdLine, out strApp, out strArgs, true);
+		}
+
+		internal static void SplitCommandLine(string strCmdLine, out string strApp,
+			out string strArgs, bool bDecodeAppToPath)
+		{
+			if(strCmdLine == null) { Debug.Assert(false); throw new ArgumentNullException("strCmdLine"); }
 
 			string str = strCmdLine.Trim();
-
-			strApp = null; strArgs = null;
+			strApp = null;
+			strArgs = null;
 
 			if(str.StartsWith("\""))
 			{
-				int nSecond = str.IndexOf('\"', 1);
-				if(nSecond >= 1)
+				int iSecond = UrlUtil.IndexOfSecondEnclQuote(str);
+				if(iSecond >= 1)
 				{
-					strApp = str.Substring(1, nSecond - 1).Trim();
-					strArgs = str.Remove(0, nSecond + 1).Trim();
+					strApp = str.Substring(1, iSecond - 1).Trim();
+					strArgs = str.Remove(0, iSecond + 1).Trim();
 				}
 			}
 
 			if(strApp == null)
 			{
-				int nSpace = str.IndexOf(' ');
-
-				if(nSpace >= 0)
+				int iSpace = str.IndexOf(' ');
+				if(iSpace >= 0)
 				{
-					strApp = str.Substring(0, nSpace);
-					strArgs = str.Remove(0, nSpace).Trim();
+					strApp = str.Substring(0, iSpace).Trim();
+					strArgs = str.Remove(0, iSpace + 1).Trim();
 				}
-				else strApp = strCmdLine;
+				else strApp = str;
 			}
 
-			if(strApp == null) strApp = string.Empty;
+			if(strApp == null) { Debug.Assert(false); strApp = string.Empty; }
 			if(strArgs == null) strArgs = string.Empty;
+
+			if(bDecodeAppToPath) strApp = NativeLib.DecodeArgsToPath(strApp);
 		}
 
 		// /// <summary>
@@ -716,7 +727,7 @@ namespace KeePassLib.Utility
 			if(cchMax == 0) return string.Empty;
 			if(cchMax <= 3) return new string('.', cchMax);
 
-			return strText.Substring(0, cchMax - 3) + "...";
+			return (strText.Substring(0, cchMax - 3) + "...");
 		}
 
 		public static string GetStringBetween(string strText, int nStartIndex,
@@ -945,10 +956,10 @@ namespace KeePassLib.Utility
 
 			for(char ch = 'A'; ch <= 'Z'; ++ch)
 			{
-				string strEnhAcc = @"(&" + ch.ToString() + @")";
+				string strEnhAcc = @"(&" + ch.ToString() + ")";
 				if(str.IndexOf(strEnhAcc) >= 0)
 				{
-					str = str.Replace(@" " + strEnhAcc, string.Empty);
+					str = str.Replace(" " + strEnhAcc, string.Empty);
 					str = str.Replace(strEnhAcc, string.Empty);
 				}
 			}
@@ -1261,7 +1272,7 @@ namespace KeePassLib.Utility
 			if(uBytes <= uGB) return (((uBytes - 1UL) / uMB) + 1UL).ToString() + " MB";
 			if(uBytes <= uTB) return (((uBytes - 1UL) / uGB) + 1UL).ToString() + " GB";
 
-			return (((uBytes - 1UL)/ uTB) + 1UL).ToString() + " TB";
+			return (((uBytes - 1UL) / uTB) + 1UL).ToString() + " TB";
 		}
 
 		public static string FormatDataSizeKB(ulong uBytes)
@@ -1595,10 +1606,10 @@ namespace KeePassLib.Utility
 			return IsDataUri(strUri, null);
 		}
 
-		public static bool IsDataUri(string strUri, string strReqMimeType)
+		public static bool IsDataUri(string strUri, string strReqMediaType)
 		{
 			if(strUri == null) { Debug.Assert(false); return false; }
-			// strReqMimeType may be null
+			// strReqMediaType may be null
 
 			const string strPrefix = "data:";
 			if(!strUri.StartsWith(strPrefix, StrUtil.CaseIgnoreCmp))
@@ -1607,14 +1618,14 @@ namespace KeePassLib.Utility
 			int iC = strUri.IndexOf(',');
 			if(iC < 0) return false;
 
-			if(!string.IsNullOrEmpty(strReqMimeType))
+			if(!string.IsNullOrEmpty(strReqMediaType))
 			{
 				int iS = strUri.IndexOf(';', 0, iC);
 				int iTerm = ((iS >= 0) ? iS : iC);
 
-				string strMime = strUri.Substring(strPrefix.Length,
+				string strMedia = strUri.Substring(strPrefix.Length,
 					iTerm - strPrefix.Length);
-				if(!strMime.Equals(strReqMimeType, StrUtil.CaseIgnoreCmp))
+				if(!strMedia.Equals(strReqMediaType, StrUtil.CaseIgnoreCmp))
 					return false;
 			}
 
@@ -1625,20 +1636,20 @@ namespace KeePassLib.Utility
 		/// Create a data URI (according to RFC 2397).
 		/// </summary>
 		/// <param name="pbData">Data to encode.</param>
-		/// <param name="strMimeType">Optional MIME type. If <c>null</c>,
+		/// <param name="strMediaType">Optional MIME type. If <c>null</c>,
 		/// an appropriate type is used.</param>
 		/// <returns>Data URI.</returns>
-		public static string DataToDataUri(byte[] pbData, string strMimeType)
+		public static string DataToDataUri(byte[] pbData, string strMediaType)
 		{
 			if(pbData == null) throw new ArgumentNullException("pbData");
 
-			if(strMimeType == null) strMimeType = "application/octet-stream";
+			if(strMediaType == null) strMediaType = "application/octet-stream";
 
 #if (!KeePassLibSD && !KeePassUAP)
-			return ("data:" + strMimeType + ";base64," + Convert.ToBase64String(
+			return ("data:" + strMediaType + ";base64," + Convert.ToBase64String(
 				pbData, Base64FormattingOptions.None));
 #else
-			return ("data:" + strMimeType + ";base64," + Convert.ToBase64String(
+			return ("data:" + strMediaType + ";base64," + Convert.ToBase64String(
 				pbData));
 #endif
 		}
@@ -1679,6 +1690,54 @@ namespace KeePassLib.Utility
 			pb = ms.ToArray();
 			ms.Close();
 			return pb;
+		}
+
+		// https://www.iana.org/assignments/media-types/media-types.xhtml
+		private static readonly string[] g_vMediaTypePfx = new string[] {
+			"application/", "audio/", "example/", "font/", "image/",
+			"message/", "model/", "multipart/", "text/", "video/"
+		};
+		internal static bool IsMediaType(string str)
+		{
+			if(str == null) { Debug.Assert(false); return false; }
+			if(str.Length == 0) return false;
+
+			foreach(string strPfx in g_vMediaTypePfx)
+			{
+				if(str.StartsWith(strPfx, StrUtil.CaseIgnoreCmp))
+					return true;
+			}
+
+			return false;
+		}
+
+		internal static string GetCustomMediaType(string strFormat)
+		{
+			if(strFormat == null)
+			{
+				Debug.Assert(false);
+				return "application/octet-stream";
+			}
+
+			if(IsMediaType(strFormat)) return strFormat;
+
+			StringBuilder sb = new StringBuilder();
+			for(int i = 0; i < strFormat.Length; ++i)
+			{
+				char ch = strFormat[i];
+
+				if(((ch >= 'A') && (ch <= 'Z')) || ((ch >= 'a') && (ch <= 'z')) ||
+					((ch >= '0') && (ch <= '9')))
+					sb.Append(ch);
+				else if((sb.Length != 0) && ((ch == '-') || (ch == '_')))
+					sb.Append(ch);
+				else { Debug.Assert(false); }
+			}
+
+			if(sb.Length == 0) return "application/octet-stream";
+
+			return ("application/vnd." + PwDefs.ShortProductName +
+				"." + sb.ToString());
 		}
 
 		/// <summary>

@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2018 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2019 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -164,8 +164,7 @@ namespace KeePass.DataExchange.Formats
 				if((strField == PwDefs.UrlField) && (str.IndexOf('.') >= 0))
 					str = ImportUtil.FixUrl(str);
 
-				ImportUtil.AppendToField(pe, strField, str, pd, ((strField ==
-					PwDefs.NotesField) ? MessageService.NewLine : ", "), false);
+				ImportUtil.AppendToField(pe, strField, str, pd);
 			}
 		}
 	}

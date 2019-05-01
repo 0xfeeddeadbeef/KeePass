@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2018 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2019 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -68,6 +68,7 @@ namespace KeePass.App
 		public static class GlobalHotKeyId
 		{
 			public static readonly int AutoType = 195;
+			public static readonly int AutoTypePassword = 197;
 			public static readonly int AutoTypeSelected = 196;
 			public static readonly int ShowWindow = 226;
 			public static readonly int EntryMenu = 227;
@@ -127,6 +128,9 @@ namespace KeePass.App
 			// public static readonly string FaqTechMemProt = "memprot";
 
 			public static readonly string XmlReplace = "v2/xml_replace";
+
+			public static readonly string KbFaq = "kb/faq";
+			public static readonly string KbFaqURtf = "urtf";
 		}
 
 		public static class CommandLineOptions
@@ -156,11 +160,14 @@ namespace KeePass.App
 			public static readonly string ExitAll = "exit-all";
 			public static readonly string Minimize = "minimize";
 			public static readonly string AutoType = "auto-type";
+			public static readonly string AutoTypePassword = "auto-type-password";
 			public static readonly string AutoTypeSelected = "auto-type-selected";
 			public static readonly string OpenEntryUrl = "entry-url-open";
 			public static readonly string LockAll = "lock-all";
 			public static readonly string UnlockAll = "unlock-all";
+			public static readonly string Cancel = "cancel";
 			public static readonly string IpcEvent = "e";
+			public static readonly string IpcEvent1 = "e1";
 
 			public static readonly string Uuid = "uuid";
 

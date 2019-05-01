@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2018 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2019 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -42,13 +42,13 @@ namespace KeePassLib.Cryptography.KeyDerivation
 		private const uint MaxVersion = 0x13;
 
 		private const int MinSalt = 8;
-		private const int MaxSalt = int.MaxValue; // .NET limit; 2^32 - 1 in spec
+		private const int MaxSalt = int.MaxValue; // .NET limit; 2^32 - 1 in spec.
 
 		internal const ulong MinIterations = 1;
 		internal const ulong MaxIterations = uint.MaxValue;
 
 		internal const ulong MinMemory = 1024 * 8; // For parallelism = 1
-		// internal const ulong MaxMemory = (ulong)uint.MaxValue * 1024UL; // Spec
+		// internal const ulong MaxMemory = (ulong)uint.MaxValue * 1024UL; // Spec.
 		internal const ulong MaxMemory = int.MaxValue; // .NET limit
 
 		internal const uint MinParallelism = 1;

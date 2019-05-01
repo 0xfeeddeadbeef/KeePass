@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2018 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2019 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ namespace KeePassLib.Translation
 	public sealed class KPTranslation
 	{
 		public static readonly string FileExtension = "lngx";
+		internal const string FileExtension1x = "lng";
 
 		private KPTranslationProperties m_props = new KPTranslationProperties();
 		public KPTranslationProperties Properties

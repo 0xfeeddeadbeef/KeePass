@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2018 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2019 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -222,14 +222,14 @@ namespace KeePass.Native
 		[DllImport("User32.dll", SetLastError = true)]
 		internal static extern IntPtr SetClipboardData(uint uFormat, IntPtr hMem);
 
-		[DllImport("User32.dll", SetLastError = true)]
-		internal static extern IntPtr GetClipboardData(uint uFormat);
+		// [DllImport("User32.dll", SetLastError = true)]
+		// internal static extern IntPtr GetClipboardData(uint uFormat);
 
 		[DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto)]
 		internal static extern uint RegisterClipboardFormat(string lpszFormat);
 
-		[DllImport("User32.dll")]
-		internal static extern uint GetClipboardSequenceNumber();
+		// [DllImport("User32.dll")]
+		// internal static extern uint GetClipboardSequenceNumber();
 
 		// [DllImport("User32.dll")]
 		// internal static extern IntPtr GetClipboardOwner();
@@ -422,10 +422,10 @@ namespace KeePass.Native
 		internal static extern bool PlaySound(string pszSound, IntPtr hmod,
 			uint fdwSound);
 
-		[DllImport("Shell32.dll", CharSet = CharSet.Auto)]
-		internal static extern IntPtr ShellExecute(IntPtr hwnd,
-			string lpOperation, string lpFile, string lpParameters,
-			string lpDirectory, int nShowCmd);
+		// [DllImport("Shell32.dll", CharSet = CharSet.Auto)]
+		// internal static extern IntPtr ShellExecute(IntPtr hwnd,
+		//	string lpOperation, string lpFile, string lpParameters,
+		//	string lpDirectory, int nShowCmd);
 
 		[DllImport("User32.dll", CharSet = CharSet.Auto)]
 		internal static extern int MessageBox(IntPtr hWnd, string lpText,

@@ -17,7 +17,7 @@
 	<meta name="DC.type" content="Text" />
 	<meta name="DC.format" content="text/html" />
 	<meta name="DC.language" content="en" />
-	<meta name="DC.rights" content="Copyright (C) 2003-2018 Dominik Reichl" />
+	<meta name="DC.rights" content="Copyright (C) 2003-2019 Dominik Reichl" />
 
 	<meta name="robots" content="index, follow" />
 	<meta name="flattr:id" content="42rykv" />
@@ -108,6 +108,8 @@ days the master key should/must be changed.</td></tr>
 <td>Disable 'Help' &rarr; 'Check for Updates' menu item.</td></tr>
 <tr><td style="text-align: right">0x40</td><td style="text-align: right">64</td>
 <td>Disable 'Tools' &rarr; 'Database Tools' &rarr; 'XML Replace' menu item.</td></tr>
+<tr><td style="text-align: right">0x80</td><td style="text-align: right">128</td>
+<td>Disable 'File' &rarr; 'Database Settings' menu item.</td></tr>
 <tr><td style="text-align: right">0x10000</td><td style="text-align: right">65536</td>
 <td>Hide built-in profiles in the
 password generator context menu of the entry editing dialog.</td></tr>
@@ -190,6 +192,16 @@ It only works reasonably in very specific, limited usage scenarios
 and is not recommended for most users.<br />
 This option works on Windows only and requires the KeePassLibC DLL
 (included in default installations and packages).</li>
+
+<li><b>Configuration/UI/TrayIcon/ShowOnlyIfTrayedEx</b>:<br />
+If this option is set to <code>true</code>, the KeePass icon in the
+system tray is displayed only if the main window has been minimized
+to the tray.<br />
+<em>Warning!</em>
+Turning on this option can result in denial-of-service problems.
+If you want to hide the KeePass icon, it is recommended to configure
+this in the system settings instead (in Windows: 'Personalization' &rarr;
+'Taskbar' &rarr; 'Select which icons appear on the taskbar').</li>
 </ul>
 
 </body></html>

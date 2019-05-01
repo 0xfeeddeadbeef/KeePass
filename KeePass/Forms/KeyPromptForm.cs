@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2018 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2019 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -114,12 +114,17 @@ namespace KeePass.Forms
 		{
 			m_bInitializing = true;
 
+			// The password text box should not be focused by default
+			// in order to avoid a Caps Lock warning tooltip bug;
+			// https://sourceforge.net/p/keepass/bugs/1807/
+			Debug.Assert((m_tbPassword.TabIndex >= 2) && !m_tbPassword.Focused);
+
 			GlobalWindowManager.AddWindow(this);
 			// if(m_bRedirectActivation) Program.MainForm.RedirectActivationPush(this);
 
 			string strBannerTitle = (!string.IsNullOrEmpty(m_strCustomTitle) ?
 				m_strCustomTitle : KPRes.EnterCompositeKey);
-			string strBannerDesc = WinUtil.CompactPath(m_ioInfo.Path, 45);
+			string strBannerDesc = m_ioInfo.GetDisplayName(); // Compacted by banner
 			BannerFactory.CreateBannerEx(this, m_bannerImage,
 				Properties.Resources.B48x48_KGPG_Key2, strBannerTitle, strBannerDesc);
 			this.Icon = AppIcons.Default;
@@ -147,6 +152,10 @@ namespace KeePass.Forms
 
 			// m_cmbKeyFile.OrderedImageList = m_lKeyFileImages;
 			AddKeyFileSuggPriv(KPRes.NoKeyFileSpecifiedMeta, true);
+
+			// Enable protection before possibly setting a text
+			m_cbHidePassword.Checked = true;
+			OnCheckedHidePassword(sender, e); // 'Checked' may have been true already
 
 			// Do not directly compare with Program.CommandLineArgs.FileName,
 			// because this may be a relative path instead of an absolute one
@@ -197,9 +206,6 @@ namespace KeePass.Forms
 					AddKeyFileSuggPriv(str, true);
 				}
 			}
-
-			m_cbHidePassword.Checked = true;
-			OnCheckedHidePassword(sender, e);
 
 			Debug.Assert(m_cmbKeyFile.Text.Length != 0);
 

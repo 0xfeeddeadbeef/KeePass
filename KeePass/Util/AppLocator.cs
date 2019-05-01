@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2018 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2019 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -435,7 +435,7 @@ namespace KeePass.Util
 			int iPrefix = str.IndexOf(':');
 			if(iPrefix >= 0) str = str.Substring(iPrefix + 1).Trim();
 
-			int iSep = str.IndexOfAny(new char[]{ ' ', '\t', '\r', '\n' });
+			int iSep = str.IndexOfAny(new char[] { ' ', '\t', '\r', '\n' });
 			if(iSep >= 0) str = str.Substring(0, iSep);
 
 			return ((str.Length > 0) ? str : null);

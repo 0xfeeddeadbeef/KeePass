@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2018 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2019 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -161,10 +161,11 @@ namespace KeePass.DataExchange.Formats
 		private static void ExportEntry(PwEntry pe, string strDir, PwExportInfo pxi)
 		{
 			PwDatabase pd = ((pxi != null) ? pxi.ContextDatabase : null);
-			SprContext ctx = new SprContext(pe, pd, SprCompileFlags.NonActive, false, false);
+			SprContext ctxUrl = new SprContext(pe, pd, SprCompileFlags.NonActive, false, true);
+			SprContext ctx = ctxUrl.WithoutContentTransformations();
 
 			KeyValuePair<string, string>? okvpCmd = null;
-			string strUrl = SprEngine.Compile(pe.Strings.ReadSafe(PwDefs.UrlField), ctx);
+			string strUrl = SprEngine.Compile(pe.Strings.ReadSafe(PwDefs.UrlField), ctxUrl);
 			if(WinUtil.IsCommandLineUrl(strUrl))
 			{
 				strUrl = WinUtil.GetCommandLineFromUrl(strUrl);
@@ -172,7 +173,7 @@ namespace KeePass.DataExchange.Formats
 				if(!NativeLib.IsUnix()) // LNKs only supported on Windows
 				{
 					string strApp, strArgs;
-					StrUtil.SplitCommandLine(strUrl, out strApp, out strArgs);
+					StrUtil.SplitCommandLine(strUrl, out strApp, out strArgs, true);
 
 					if(!string.IsNullOrEmpty(strApp))
 						okvpCmd = new KeyValuePair<string, string>(strApp, strArgs);

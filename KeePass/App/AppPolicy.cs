@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2018 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2019 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,10 +19,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Windows.Forms;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Windows.Forms;
 
+using KeePass.App.Configuration;
 using KeePass.Resources;
 
 using KeePassLib;
@@ -394,13 +395,34 @@ namespace KeePass.App
 				default: Debug.Assert(false); break;
 			}
 
-			if(bAllowed == false)
+			if(!bAllowed)
 			{
 				string strMsg = RequiredPolicyMessage(flag);
 				MessageService.ShowWarning(strMsg);
 			}
 
 			return bAllowed;
+		}
+
+		internal static void ApplyToConfig()
+		{
+			try
+			{
+				AppConfigEx cfg = Program.Config;
+
+				if(!AppPolicy.Current.UnhidePasswords)
+				{
+					List<AceColumn> l = cfg.MainWindow.EntryListColumns;
+					foreach(AceColumn c in l)
+					{
+						if(c == null) { Debug.Assert(false); continue; }
+
+						if(c.Type == AceColumnType.Password)
+							c.HideWithAsterisks = true;
+					}
+				}
+			}
+			catch(Exception) { Debug.Assert(false); }
 		}
 	}
 }

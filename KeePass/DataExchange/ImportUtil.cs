@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2018 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2019 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -94,11 +94,13 @@ namespace KeePass.DataExchange
 
 			bool bUseTempDb = (fmtImp.SupportsUuids || fmtImp.RequiresKey);
 			bool bAllSuccess = true;
+			MainForm mf = Program.MainForm; // Null for KPScript
 
 			// if(bSynchronize) { Debug.Assert(vFiles.Length == 1); }
 
 			IStatusLogger dlgStatus;
-			if(Program.Config.UI.ShowImportStatusDialog)
+			if(Program.Config.UI.ShowImportStatusDialog ||
+				((mf != null) && !mf.HasFormLoaded))
 				dlgStatus = new OnDemandStatusDialog(false, fParent);
 			else dlgStatus = new UIBlockerStatusLogger(fParent);
 
@@ -169,7 +171,8 @@ namespace KeePass.DataExchange
 						strMsgEx = KLRes.InvalidCompositeKey + MessageService.NewParagraph +
 							KPRes.SynchronizingHint;
 
-					MessageService.ShowWarning(strMsgEx);
+					MessageService.ShowWarning(iocIn.GetDisplayName(),
+						KPRes.FileImportFailed, strMsgEx);
 
 					bAllSuccess = false;
 					continue;
@@ -209,7 +212,6 @@ namespace KeePass.DataExchange
 				dlgStatus.SetText(KPRes.Synchronizing + " (" +
 					KPRes.SavingDatabase + ")", LogStatusType.Info);
 
-				MainForm mf = Program.MainForm; // Null for KPScript
 				if(mf != null)
 				{
 					try { mf.DocumentManager.ActiveDatabase = pwDatabase; }
@@ -455,7 +457,7 @@ namespace KeePass.DataExchange
 			"free text", "freetext", "free",
 
 			// Non-English names
-			"kommentar"
+			"kommentar", "hinweis"
 		};
 
 		private static readonly string[] m_vSubstrTitles = {
@@ -496,6 +498,17 @@ namespace KeePass.DataExchange
 			if(Array.IndexOf<string>(m_vUrls, strFind) >= 0)
 				return PwDefs.UrlField;
 			if(Array.IndexOf<string>(m_vNotes, strFind) >= 0)
+				return PwDefs.NotesField;
+
+			if(strName.Equals(KPRes.Title, StrUtil.CaseIgnoreCmp))
+				return PwDefs.TitleField;
+			if(strName.Equals(KPRes.UserName, StrUtil.CaseIgnoreCmp))
+				return PwDefs.UserNameField;
+			if(strName.Equals(KPRes.Password, StrUtil.CaseIgnoreCmp))
+				return PwDefs.PasswordField;
+			if(strName.Equals(KPRes.Url, StrUtil.CaseIgnoreCmp))
+				return PwDefs.UrlField;
+			if(strName.Equals(KPRes.Notes, StrUtil.CaseIgnoreCmp))
 				return PwDefs.NotesField;
 
 			return (bAllowFuzzy ? MapNameSubstringToStandardField(strName) : string.Empty);
@@ -547,28 +560,38 @@ namespace KeePass.DataExchange
 		public static void AppendToField(PwEntry pe, string strName, string strValue,
 			PwDatabase pdContext, string strSeparator, bool bOnlyIfNotDup)
 		{
-			// Default separator must be single-line compatible
-			if(strSeparator == null) strSeparator = ", ";
+			if(pe == null) { Debug.Assert(false); return; }
+			if(string.IsNullOrEmpty(strName)) { Debug.Assert(false); return; }
 
-			bool bProtect = ((pdContext == null) ? false :
-				pdContext.MemoryProtection.GetProtection(strName));
+			if(strValue == null) { Debug.Assert(false); strValue = string.Empty; }
+
+			if(strSeparator == null)
+			{
+				if(PwDefs.IsStandardField(strName) && (strName != PwDefs.NotesField))
+					strSeparator = ", ";
+				else strSeparator = MessageService.NewLine;
+			}
 
 			ProtectedString psPrev = pe.Strings.Get(strName);
-			if(psPrev != null) bProtect = psPrev.IsProtected;
-			else psPrev = ProtectedString.Empty; // Protection-neutral for '+'
+			if((psPrev == null) || psPrev.IsEmpty)
+			{
+				MemoryProtectionConfig mpc = ((pdContext != null) ?
+					pdContext.MemoryProtection : new MemoryProtectionConfig());
+				bool bProtect = mpc.GetProtection(strName);
 
-			ProtectedString psValue = new ProtectedString(bProtect, strValue ?? string.Empty);
-
-			if(psPrev.IsEmpty) pe.Strings.Set(strName, psValue);
-			else if(!psValue.IsEmpty)
+				pe.Strings.Set(strName, new ProtectedString(bProtect, strValue));
+			}
+			else if(strValue.Length != 0)
 			{
 				bool bAppend = true;
-
 				if(bOnlyIfNotDup)
-					bAppend &= !psPrev.Equals(psValue, false);
+				{
+					ProtectedString psValue = new ProtectedString(false, strValue);
+					bAppend = !psPrev.Equals(psValue, false);
+				}
 
 				if(bAppend)
-					pe.Strings.Set(strName, (psPrev + strSeparator) + psValue);
+					pe.Strings.Set(strName, psPrev + (strSeparator + strValue));
 			}
 		}
 
@@ -630,7 +653,8 @@ namespace KeePass.DataExchange
 
 			try
 			{
-				if(ClipboardUtil.ContainsText()) return ClipboardUtil.GetText();
+				if(ClipboardUtil.ContainsText())
+					return (ClipboardUtil.GetText() ?? string.Empty);
 			}
 			catch(Exception) { Debug.Assert(false); } // Opened by other process
 

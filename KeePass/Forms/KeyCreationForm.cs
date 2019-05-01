@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2018 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2019 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -82,6 +82,11 @@ namespace KeePass.Forms
 
 		private void OnFormLoad(object sender, EventArgs e)
 		{
+			// The password text box should not be focused by default
+			// in order to avoid a Caps Lock warning tooltip bug;
+			// https://sourceforge.net/p/keepass/bugs/1807/
+			Debug.Assert((m_tbPassword.TabIndex >= 2) && !m_tbPassword.Focused);
+
 			GlobalWindowManager.AddWindow(this);
 
 			BannerFactory.CreateBannerEx(this, m_bannerImage,
