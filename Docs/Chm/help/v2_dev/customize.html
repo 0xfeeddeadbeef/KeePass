@@ -129,11 +129,12 @@ the changes to the last access times are lost.</td></tr>
 <tr><td>0x80000</td><td>524288</td>
 <td>Do not display auto-type obfuscation compatibility information dialogs.</td></tr>
 <tr><td>0x100000</td><td>1048576</td>
-<td>Do not clear the quick search terms list when closing/locking a database.<br />
-<em>Note:</em> Even if this flag is set, the list is cleared when exiting
+<td>Do not remove the quick search terms and the search term in the 'Find'
+dialog when closing/locking a database.<br />
+<em>Note:</em> Even when this flag is set, these items are removed when exiting
 KeePass. If you frequently perform the same searches, consider using
-<a href="../v2/entry.html#tags">tags</a> or
-<a href="../base/search.html#prf">search profiles</a>.</td></tr>
+<a href="../base/search.html#prf">search profiles</a> or
+<a href="../v2/entry.html#tags">tags</a>.</td></tr>
 <tr><td>0x200000</td><td>2097152</td>
 <td>Enable the Input Method Editor (IME) on
 <a href="https://keepass.info/help/kb/sec_desk.html" target="_blank">secure desktops</a>.<br />
@@ -179,7 +180,19 @@ This overrides all other help sources (local and online).
 the relative help page path is inserted by <code>{BASE}</code>.
 This element is used only if it is stored in the
 <a href="https://keepass.info/help/kb/config_enf.html" target="_blank">enforced
-configuration file</a>.</li>
+configuration file</a>.
+
+<p>Examples:</p>
+
+<ul class="withspc">
+<li><a href="https://www.ulduzsoft.com/kchmviewer/" target="_blank">KchmViewer</a>:<br />
+<code>cmd://"%ProgramFiles%\Ulduzsoft\KchmViewer\kchmviewer.exe"
+-token "info.keepass.kp2" -showPage "/help/{BASE}" "{APPDIR}\KeePass.chm"</code></li>
+
+<li><a href="https://www.sumatrapdfreader.org/" target="_blank">SumatraPDF</a>:<br />
+<code>cmd://"%ProgramFiles%\SumatraPDF\SumatraPDF.exe"
+-named-dest "help/{BASE}" "{APPDIR}\KeePass.chm"</code></li>
+</ul></li>
 
 <li><b>Configuration/Defaults/WinFavsBaseFolderName</b>:<br />
 For the 'Windows Favorites' export:

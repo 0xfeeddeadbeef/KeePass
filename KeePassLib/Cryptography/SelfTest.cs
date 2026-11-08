@@ -1012,23 +1012,26 @@ namespace KeePassLib.Cryptography
 					throw new SecurityException("ProtectedString-14");
 			}
 
-			ps = new ProtectedString(false, "ABCD");
+			ps = new ProtectedString(false, "ABCD\n");
 			ps2 = new ProtectedString(true, "EFG");
-			ps += (ps2 + "HI");
-			if(!ps.Equals(new ProtectedString(true, "ABCDEFGHI"), true))
-				throw new SecurityException("ProtectedString-15");
-			if(!ps.Equals(new ProtectedString(false, "ABCDEFGHI"), false))
-				throw new SecurityException("ProtectedString-16");
-			if(!object.ReferenceEquals(ps, ps.Trim()))
-				throw new SecurityException("ProtectedString-17");
+			ps += (ps2 + "HI\r\n");
+			if(!ps.Equals(new ProtectedString(true, "ABCD\nEFGHI\r\n"), true))
+				throw new SecurityException("ProtectedString-Equals-1");
+			if(!ps.Equals(new ProtectedString(false, "ABCD\nEFGHI\r\n"), false))
+				throw new SecurityException("ProtectedString-Equals-2");
+			if(!ps.Equals(new ProtectedString(true, "ABCD\r\nEFGHI\n"), true,
+				PwCompareOptions.NormalizeNewLines))
+				throw new SecurityException("ProtectedString-Equals-3");
 
 			str = "\t\t \r\nA\tB C\r\n ";
 			ps = (new ProtectedString(false, str)).Trim();
 			ps2 = (new ProtectedString(true, str)).Trim();
 			if(ps.IsProtected || !ps2.IsProtected)
-				throw new SecurityException("ProtectedString-18");
+				throw new SecurityException("ProtectedString-Trim-1");
 			if((ps.ReadString() != str.Trim()) || (ps2.ReadString() != str.Trim()))
-				throw new SecurityException("ProtectedString-19");
+				throw new SecurityException("ProtectedString-Trim-2");
+			if(!object.ReferenceEquals(ps, ps.Trim()))
+				throw new SecurityException("ProtectedString-Trim-3");
 #endif
 		}
 

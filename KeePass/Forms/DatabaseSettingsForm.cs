@@ -294,12 +294,10 @@ namespace KeePass.Forms
 				m_pwDatabase.NameChanged = DateTime.UtcNow;
 			}
 
-			string strNew = m_tbDbDesc.Text;
-			string strOrgFlt = StrUtil.NormalizeNewLines(m_pwDatabase.Description, false);
-			string strNewFlt = StrUtil.NormalizeNewLines(strNew, false);
-			if(strNewFlt != strOrgFlt)
+			string str = m_tbDbDesc.Text;
+			if(!StrUtil.EqualsNLNormalized(str, m_pwDatabase.Description))
 			{
-				m_pwDatabase.Description = strNew;
+				m_pwDatabase.Description = str;
 				m_pwDatabase.DescriptionChanged = DateTime.UtcNow;
 			}
 

@@ -437,7 +437,8 @@ namespace KeePass.UI
 					AddAppVariant(it, KPRes.Private, "--inprivate");
 					bFoundEdge = true;
 				}
-				else if((s == "firefox") || (s == "palemoon") || (s == "waterfox"))
+				else if((s == "firefox") || (s == "librewolf") || (s == "palemoon") ||
+					(s == "r3dfox") || (s == "r3dfox_esr") || (s == "waterfox"))
 				{
 					// The command line options -private and -private-window work
 					// correctly with Firefox 49.0.1 (before, they did not);
@@ -480,10 +481,11 @@ namespace KeePass.UI
 			{
 				// Do not add Edge if it has been uninstalled;
 				// https://sourceforge.net/p/keepass/bugs/2347/
+				// https://sourceforge.net/p/keepass/bugs/2434/ (with --single-arg...)
 				string str = (RegUtil.GetValue<string>(
 					"HKEY_CLASSES_ROOT\\microsoft-edge\\shell\\open\\command",
-					string.Empty) ?? string.Empty).TrimEnd(' ', '\t', '\"');
-				if(!str.EndsWith("launch-edge-store-page", StrUtil.CaseIgnoreCmp))
+					string.Empty) ?? string.Empty);
+				if(str.IndexOf("launch-edge-store-page", StrUtil.CaseIgnoreCmp) < 0)
 					AddAppByShellExpand("microsoft-edge:" + PlhTargetUri,
 						"Microsoft Edge", AppLocator.EdgePath);
 			}

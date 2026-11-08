@@ -717,7 +717,7 @@ namespace KeePass.UI
 		public static void SetMultilineText(TextBox tb, string str)
 		{
 			if(tb == null) { Debug.Assert(false); return; }
-			if(str == null) str = string.Empty;
+			if(str == null) { Debug.Assert(false); str = string.Empty; }
 
 			if(!NativeLib.IsUnix())
 				str = StrUtil.NormalizeNewLines(str, true);
@@ -3840,9 +3840,10 @@ namespace KeePass.UI
 		{
 			if(lv == null) { Debug.Assert(false); return; }
 
-			int w = (lv.ClientSize.Width - GetVScrollBarWidth()) / 2;
-			lv.Columns.Add(KPRes.Name, w);
-			lv.Columns.Add(KPRes.Value, w);
+			int w = lv.ClientSize.Width - GetVScrollBarWidth();
+			int wS = w / 5;
+			lv.Columns.Add(KPRes.Name, w - wS);
+			lv.Columns.Add(KPRes.Size, wS, HorizontalAlignment.Right); // KPRes.Value
 		}
 
 		internal static void StrDictListUpdate(ListView lv, StringDictionaryEx sd,
@@ -3860,14 +3861,18 @@ namespace KeePass.UI
 			{
 				if(kvp.Key == null) { Debug.Assert(false); continue; }
 
-				string strValue = StrUtil.MultiToSingleLine(StrUtil.CompactString3Dots(
-					(kvp.Value ?? string.Empty), 1024));
+				string strValue = (kvp.Value ?? string.Empty);
+				bool bMulti = (bMultipleValues && (strValue == strCue));
+
+				Debug.Assert(sizeof(char) == 2); // On all systems
+				if(!bMulti)
+					strValue = StrUtil.FormatDataSizeKB((ulong)strValue.Length << 1);
+				// StrUtil.MultiToSingleLine(StrUtil.CompactString3Dots(strValue, 1024));
 
 				ListViewItem lvi = lv.Items.Add(kvp.Key);
 				lvi.SubItems.Add(strValue);
 
-				if(bMultipleValues && (strValue == strCue))
-					MultipleValuesEx.ConfigureText(lvi, 1);
+				if(bMulti) MultipleValuesEx.ConfigureText(lvi, 1);
 			}
 
 			Scroll(lv, si, true);
@@ -3904,6 +3909,21 @@ namespace KeePass.UI
 			{
 				c.Text = strText;
 			}
+		}
+
+		internal static void SetText(ListViewItem.ListViewSubItem lvsi, string strText)
+		{
+			if(lvsi == null) { Debug.Assert(false); return; }
+			if(strText == null) { Debug.Assert(false); strText = string.Empty; }
+
+			// When setting the value of the Text property, it does not check
+			// whether the new value is the same as the old one and always sends
+			// at least one window message (in .NET System.Windows.Forms 4.8.9325,
+			// before DNP 11401, setting Text calls UpdateSubItems(-1), i.e. *all*
+			// subitems are updated);
+			// https://sourceforge.net/p/keepass/bugs/2422/
+			// https://github.com/dotnet/winforms/pull/11401
+			if(lvsi.Text != strText) lvsi.Text = strText;
 		}
 
 		internal static int GetEntryIconIndex(PwDatabase pd, PwEntry pe,

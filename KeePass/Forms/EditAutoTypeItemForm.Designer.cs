@@ -41,7 +41,7 @@
 			this.m_rbSeqCustom = new System.Windows.Forms.RadioButton();
 			this.m_cmbWindow = new KeePass.UI.ImageComboBoxEx();
 			this.m_rtbPlaceholders = new KeePass.UI.CustomRichTextBoxEx();
-			this.m_rbKeySeq = new KeePass.UI.CustomRichTextBoxEx();
+			this.m_rtbKeySeq = new KeePass.UI.CustomRichTextBoxEx();
 			((System.ComponentModel.ISupportInitialize)(this.m_bannerImage)).BeginInit();
 			this.SuspendLayout();
 			// 
@@ -100,9 +100,9 @@
 			this.m_lblKeySeqInsertInfo.AutoSize = true;
 			this.m_lblKeySeqInsertInfo.Location = new System.Drawing.Point(29, 214);
 			this.m_lblKeySeqInsertInfo.Name = "m_lblKeySeqInsertInfo";
-			this.m_lblKeySeqInsertInfo.Size = new System.Drawing.Size(94, 13);
+			this.m_lblKeySeqInsertInfo.Size = new System.Drawing.Size(36, 13);
 			this.m_lblKeySeqInsertInfo.TabIndex = 7;
-			this.m_lblKeySeqInsertInfo.Text = "&Insert placeholder:";
+			this.m_lblKeySeqInsertInfo.Text = "&Insert:";
 			// 
 			// m_lblSeparator
 			// 
@@ -179,18 +179,17 @@
 			this.m_rtbPlaceholders.Text = "";
 			this.m_rtbPlaceholders.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.OnPlaceholdersLinkClicked);
 			// 
-			// m_rbKeySeq
+			// m_rtbKeySeq
 			// 
-			this.m_rbKeySeq.DetectUrls = false;
-			this.m_rbKeySeq.Font = new System.Drawing.Font("Courier New", 8.25F);
-			this.m_rbKeySeq.HideSelection = false;
-			this.m_rbKeySeq.Location = new System.Drawing.Point(32, 187);
-			this.m_rbKeySeq.Multiline = false;
-			this.m_rbKeySeq.Name = "m_rbKeySeq";
-			this.m_rbKeySeq.Size = new System.Drawing.Size(467, 21);
-			this.m_rbKeySeq.TabIndex = 6;
-			this.m_rbKeySeq.Text = "";
-			this.m_rbKeySeq.TextChanged += new System.EventHandler(this.OnTextChangedKeySeq);
+			this.m_rtbKeySeq.DetectUrls = false;
+			this.m_rtbKeySeq.HideSelection = false;
+			this.m_rtbKeySeq.Location = new System.Drawing.Point(32, 187);
+			this.m_rtbKeySeq.Multiline = false;
+			this.m_rtbKeySeq.Name = "m_rtbKeySeq";
+			this.m_rtbKeySeq.Size = new System.Drawing.Size(467, 21);
+			this.m_rtbKeySeq.TabIndex = 6;
+			this.m_rtbKeySeq.Text = "";
+			this.m_rtbKeySeq.TextChanged += new System.EventHandler(this.OnTextChangedKeySeq);
 			// 
 			// EditAutoTypeItemForm
 			// 
@@ -205,7 +204,7 @@
 			this.Controls.Add(this.m_lblOpenHint);
 			this.Controls.Add(this.m_cmbWindow);
 			this.Controls.Add(this.m_rtbPlaceholders);
-			this.Controls.Add(this.m_rbKeySeq);
+			this.Controls.Add(this.m_rtbKeySeq);
 			this.Controls.Add(this.m_lblSeparator);
 			this.Controls.Add(this.m_lblKeySeqInsertInfo);
 			this.Controls.Add(this.m_lblTargetWindow);
@@ -239,7 +238,7 @@
 		private System.Windows.Forms.Label m_lblTargetWindow;
 		private System.Windows.Forms.Label m_lblKeySeqInsertInfo;
 		private System.Windows.Forms.Label m_lblSeparator;
-		private KeePass.UI.CustomRichTextBoxEx m_rbKeySeq;
+		private KeePass.UI.CustomRichTextBoxEx m_rtbKeySeq;
 		private KeePass.UI.CustomRichTextBoxEx m_rtbPlaceholders;
 		private KeePass.UI.ImageComboBoxEx m_cmbWindow;
 		private System.Windows.Forms.Label m_lblOpenHint;

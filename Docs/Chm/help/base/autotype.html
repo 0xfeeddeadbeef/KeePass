@@ -60,9 +60,10 @@
 <li><a href="#autoglobal">Global Auto-Type Hot Key</a></li>
 </ul>
 </li>
-<li>Specifying Keystroke Sequences and Target Windows
+<li>Specifying Sequences and Target Windows
 <ul>
-<li><a href="#autoseq">Auto-Type Keystroke Sequences</a></li>
+<li><a href="#autoseq">Auto-Type Sequences</a></li>
+<li><a href="#autoseqex">Auto-Type Sequences - Examples</a></li>
 <li><a href="#autowindows">Target Window Filters</a></li>
 <li><a href="#changedefaultseq">Change Default Auto-Type Sequence</a></li>
 </ul>
@@ -80,7 +81,7 @@ a sequence of keypresses, which KeePass can automatically perform for you. The
 simulated keypresses can be sent to any other currently open window of your choice (browser windows,
 login dialogs, ...).</p>
 
-<p>By default, the sent keystroke sequence is <code>{USERNAME}{TAB}{PASSWORD}{ENTER}</code>,
+<p>The default sequence is <code>{USERNAME}{TAB}{PASSWORD}{ENTER}</code>,
 i.e. it first types the user name of the selected entry, then presses the <kbd><kbd>Tab</kbd></kbd> key,
 then types the password of the entry and finally presses the <kbd><kbd>Enter</kbd></kbd> key.</p>
 
@@ -102,7 +103,7 @@ Auto-Type resistant against keyloggers).
 
 
 <p>Additionally, you can create customized window/sequence associations, which override the
-default sequence. You can specify different keystroke sequences for different windows for each entry.
+default sequence. You can specify different sequences for different windows for each entry.
 For example, imagine a webpage, to which you want to login, that has multiple
 pages where one can login. These pages could all look a bit different (on one
 you could additionally need to check some checkbox &#8211; like often seen in forums).
@@ -292,10 +293,10 @@ title to determine a match.
 <br />
 
 <h2 class="sectiontitle" id="autoseq"><img src="../images/b16x16_ktouch.png"
-alt="" /> Auto-Type Keystroke Sequences</h2>
+alt="" /> Auto-Type Sequences</h2>
 
-<p>An auto-type keystroke sequence is a one-line string that can contain
-placeholders and special key codes.</p>
+<p>An auto-type sequence is a one-line string that can contain placeholders and
+special key codes.</p>
 
 <p>A complete list of all supported placeholders can be found on the page
 <a href="placeholders.html">Placeholders</a>. The special key codes can
@@ -306,11 +307,12 @@ default auto-type is <code>{USERNAME}{TAB}{PASSWORD}{ENTER}</code>. Here,
 <code>{USERNAME}</code> and <code>{PASSWORD}</code> are placeholders: when auto-type
 is performed, these are replaced by the appropriate field values of the entry.
 <code>{TAB}</code> and <code>{ENTER}</code> are special key codes: these are replaced
-by the appropriate keypresses. Special key codes are the only way to specify special
-keys like Arrow-Down, Shift, Escape, etc.</p>
+by the corresponding keypresses. Special key codes allow to specify special keys
+like <kbd><kbd>&darr;</kbd></kbd>, <kbd><kbd>Home</kbd></kbd>,
+<kbd><kbd>F1</kbd></kbd>, etc.</p>
 
-<p>Of course, keystroke sequences can also contain simple characters to be sent.
-For example, the following string is perfectly valid as keystroke sequence string:<br />
+<p>Auto-Type sequences may also contain simple characters to be sent.
+For example, the following string is a valid auto-type sequence:<br />
 <code>{USERNAME}{TAB}Some text to be sent!{ENTER}</code>.</p>
 
 
@@ -498,41 +500,62 @@ appending a number within the code. For example, <code>{TAB 5}</code>
 presses the <kbd><kbd>Tab</kbd></kbd> key 5 times.
 
 
-<p><b>Examples:</b></p>
-
-<p><code>{TITLE}{TAB}{USERNAME}{TAB}{PASSWORD}{ENTER}</code><br />
-Types the entry's title, a <kbd><kbd>Tab</kbd></kbd>, the user name,
-a <kbd><kbd>Tab</kbd></kbd>, the password of the
-currently selected entry, and presses <kbd><kbd>Enter</kbd></kbd>.</p>
-
-<p><code>{TAB}{PASSWORD}{ENTER}</code><br />
-Presses the <kbd><kbd>Tab</kbd></kbd> key, enters the entry's password and
-presses <kbd><kbd>Enter</kbd></kbd>.</p>
-
-<p><code>{USERNAME}{TAB}^v{ENTER}</code><br />
-Types the user name, presses <kbd><kbd>Tab</kbd></kbd>, presses
-<kbd><kbd>Ctrl</kbd>+<kbd>V</kbd></kbd> (which pastes data from the Windows
-clipboard in most applications), and presses <kbd><kbd>Enter</kbd></kbd>.</p>
-
-<p><b>Toggling Checkboxes:</b><br />
-A checkbox (e.g. &quot;Stay logged in on this computer&quot;) can
-usually be toggled by sending a space character (<code>' '</code>).
-Example:<br />
-<code>{USERNAME}{TAB}{PASSWORD}{TAB} {TAB}{ENTER}</code><br />
-If there is a form with a user name field, a password field and a checkbox,
-this sequence would enter the user name, the password and toggle the checkbox
-that follows the password control.</p>
-
-<p><b>Pressing Non-Default Buttons:</b><br />
-Pressing non-default buttons works the same as toggling checkboxes: send
-a space character (<code>' '</code>).
-Note that this should only be used for non-default buttons; for
-default buttons, <code>{ENTER}</code> should be sent instead.</p>
-
-<p><b>Higher ANSI Characters:</b><br />
-The auto-type function supports sending of higher ANSI characters in range 126-255. This
+<p><b>High ANSI Characters:</b><br />
+Auto-Type supports sending of high ANSI characters in range 126-255. This
 means that you can send special characters like &copy;, @, etc. without any problems;
-you can write them directly into the keystroke sequence definition.</p>
+you can write them directly into the auto-type sequence.</p>
+
+<br />
+
+<h2 class="sectiontitle" id="autoseqex"><img src="../images/b16x16_help.png"
+alt="" /> Auto-Type Sequences - Examples</h2>
+
+<ul class="withspc">
+<li><b><code>{USERNAME}{TAB}{PASSWORD}{ENTER}</code></b><br />
+This is the default auto-type sequence, suitable for most single-step login
+forms. It types the user name, presses the <kbd><kbd>Tab</kbd></kbd> key, types
+the password and finally presses the <kbd><kbd>Enter</kbd></kbd> key.</li>
+
+<li><b><code>{USERNAME}{TAB}{PASSWORD}{TAB}{SPACE}{ENTER}</code></b><br />
+This auto-type sequence is similar to the one above, but after typing the
+password, it additionally presses the <kbd><kbd>Tab</kbd></kbd> key and the
+<kbd><kbd>Space</kbd></kbd> key (spacebar). The <kbd><kbd>Space</kbd></kbd> key
+can be used to toggle checkboxes (e.g. "Stay signed in").</li>
+
+<li><b><code>{USERNAME}{ENTER}{DELAY 2000}{PASSWORD}{ENTER}</code></b><br />
+This auto-type sequence is suitable for most two-step logins. After typing the
+user name and pressing the <kbd><kbd>Enter</kbd></kbd> key, KeePass waits two
+seconds (2000 milliseconds) for the website/application to process the user name
+(loading the second part of the login form or the second page), then types the
+password and presses the <kbd><kbd>Enter</kbd></kbd> key again.</li>
+
+<li><b><code>{USERNAME}{ENTER}</code></b><br />
+This auto-type sequence types the user name and presses the <kbd><kbd>Enter</kbd></kbd>
+key. This can be useful for a manual two-step login: when the input focus is in
+the user name box of the target application, you can press the global hot key
+for performing auto-type (<kbd><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd></kbd>
+by default), such that the sequence above types and submits the user name, and
+after that (in the second part of the login form or on the second page), you can
+press the global hot key for entering the password via auto-type
+(<kbd><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd></kbd> by default).
+This approach is less convenient than the previous auto-type sequence (because
+you need to press two global hot keys instead of only one), but it is also less
+prone to login failures (e.g. when the website/application takes a long time to
+process the user name).</li>
+
+<li><b><code>{USERNAME}{ENTER}{DELAY 2000}{PASSWORD}{ENTER}{DELAY 2000}{TIMEOTP}{ENTER}</code></b><br />
+This auto-type sequence performs a three-step login with the user name, the
+password and a time-based <a href="placeholders.html#otp">one-time password</a>.</li>
+
+<li><b><code>{CLIPBOARD-SET:&#x25CF;{PASSWORD}&#x25CF;}</code></b><br />
+This auto-type sequence copies the password to the clipboard
+(<code>{CLIPBOARD-SET:...}</code> is a <a href="placeholders.html">placeholder</a>).
+This can be useful when auto-type cannot send keypresses into the target
+application (see the <a href="#req">requirements and limitations</a>).
+After performing auto-type, you can typically press
+<kbd><kbd>Ctrl</kbd>+<kbd>V</kbd></kbd> in order to paste the password (from the
+clipboard) into the target application.</li>
+</ul>
 
 <br />
 

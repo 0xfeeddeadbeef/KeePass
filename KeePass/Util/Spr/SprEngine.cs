@@ -912,8 +912,13 @@ namespace KeePass.Util.Spr
 
 				try
 				{
-					ClipboardUtil.Copy(lParams[0] ?? string.Empty, false,
-						true, null, null, IntPtr.Zero);
+					string strC = (lParams[0] ?? string.Empty);
+					if(ClipboardUtil.Copy(strC, false, true, null, null,
+						IntPtr.Zero) && (strC.Length != 0))
+					{
+						MainForm mf = Program.MainForm;
+						if(mf != null) mf.StartClipboardCountdown();
+					}
 				}
 				catch(Exception) { Debug.Assert(false); }
 			}

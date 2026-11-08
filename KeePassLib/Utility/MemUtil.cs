@@ -495,10 +495,11 @@ namespace KeePassLib.Utility
 			return u;
 		}
 
+		// https://keepass.info/help/kb/sec_issues.html#memeqtsc
 		public static bool ArraysEqual(byte[] x, byte[] y)
 		{
-			// Return false if one of them is null (not comparable)!
-			if((x == null) || (y == null)) { Debug.Assert(false); return false; }
+			if(object.ReferenceEquals(x, y)) return true;
+			if((x == null) || (y == null)) return false;
 
 			int cb = x.Length;
 			if(cb != y.Length) return false;

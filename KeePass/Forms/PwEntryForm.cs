@@ -83,11 +83,8 @@ namespace KeePass.Forms
 		private readonly List<Image> m_lOverrideUrlIcons = new List<Image>();
 		private Image m_imgTools = null;
 
-		private const PwIcon m_pwObjectProtected = PwIcon.PaperLocked;
-		private const PwIcon m_pwObjectPlainText = PwIcon.PaperNew;
-
-		private const PwCompareOptions m_cmpOpt = (PwCompareOptions.NullEmptyEquivStd |
-			PwCompareOptions.IgnoreTimes);
+		private const PwCompareOptions c_pcoDefault = (PwCompareOptions.NullEmptyEquivStd |
+			PwCompareOptions.IgnoreTimes | PwCompareOptions.NormalizeNewLines);
 
 		private enum ListSelRestore
 		{
@@ -135,7 +132,7 @@ namespace KeePass.Forms
 					return true;
 				}
 
-				return !m_pwEntry.EqualsEntry(m_pwInitialEntry, m_cmpOpt,
+				return !m_pwEntry.EqualsEntry(m_pwInitialEntry, c_pcoDefault,
 					MemProtCmpMode.CustomOnly);
 			}
 		}
@@ -232,8 +229,6 @@ namespace KeePass.Forms
 			m_bSelectFullTitle = bSelectFullTitle;
 
 			m_vStrings = m_pwEntry.Strings.CloneDeep();
-			NormalizeStrings(m_vStrings, pwDatabase);
-
 			m_vBinaries = m_pwEntry.Binaries.CloneDeep();
 			m_atConfig = m_pwEntry.AutoType.CloneDeep();
 			m_vHistory = m_pwEntry.History.CloneDeep();
@@ -380,8 +375,6 @@ namespace KeePass.Forms
 					m_pwDatabase.MemoryProtection.ProtectUrl, m_tbUrl.Text));
 				m_vStrings.Set(PwDefs.NotesField, new ProtectedString(
 					m_pwDatabase.MemoryProtection.ProtectNotes, m_rtNotes.Text));
-
-				NormalizeStrings(m_vStrings, m_pwDatabase);
 			}
 			else // Internal to GUI
 			{
@@ -404,9 +397,9 @@ namespace KeePass.Forms
 					if(PwDefs.IsStandardField(kvp.Key)) continue;
 
 					bool bProt = kvp.Value.IsProtected;
-					PwIcon pwIcon = (bProt ? m_pwObjectProtected : m_pwObjectPlainText);
+					PwIcon pi = (bProt ? PwIcon.PaperLocked : PwIcon.PaperNew);
 
-					ListViewItem lvi = m_lvStrings.Items.Add(kvp.Key, (int)pwIcon);
+					ListViewItem lvi = m_lvStrings.Items.Add(kvp.Key, (int)pi);
 
 					if((m_mvec != null) && kvp.Value.Equals(psCue, false))
 					{
@@ -446,9 +439,7 @@ namespace KeePass.Forms
 				m_lvBinaries.Items.Clear();
 				foreach(KeyValuePair<string, ProtectedBinary> kvpBin in m_vBinaries)
 				{
-					// PwIcon pwIcon = (kvpBin.Value.IsProtected ?
-					//	m_pwObjectProtected : m_pwObjectPlainText);
-					ListViewItem lvi = m_lvBinaries.Items.Add(kvpBin.Key); // , (int)pwIcon);
+					ListViewItem lvi = m_lvBinaries.Items.Add(kvpBin.Key);
 					lvi.SubItems.Add(StrUtil.FormatDataSizeKB(kvpBin.Value.Length));
 				}
 				FileIcons.UpdateImages(m_lvBinaries, null);
@@ -495,7 +486,6 @@ namespace KeePass.Forms
 			m_sdCustomData = m_pwEntry.CustomData.CloneDeep();
 			UIUtil.StrDictListInit(m_lvCustomData);
 			UIUtil.StrDictListUpdate(m_lvCustomData, m_sdCustomData, (m_mvec != null));
-
 			m_lvCustomData.ItemDeleteButton = m_btnCDDel;
 
 #if DEBUG
@@ -570,7 +560,7 @@ namespace KeePass.Forms
 			// UIUtil.AssignShortcut(m_ctxAutoTypeCopySeq, Keys.Control | Keys.Shift | Keys.C);
 			UIUtil.AssignShortcut(m_ctxAutoTypeCopyItem, Keys.Control | Keys.C);
 			UIUtil.AssignShortcut(m_ctxAutoTypePasteItem, Keys.Control | Keys.V);
-			UIUtil.AssignShortcut(m_ctxAutoTypeDup, Keys.Control | Keys.K);
+			UIUtil.AssignShortcut(m_ctxAutoTypeDup, Keys.Control | Keys.D);
 			UIUtil.AssignShortcut(m_ctxAutoTypeSelectAll, Keys.Control | Keys.A, null, true);
 
 			if(m_pwEditMode == PwEditMode.ViewReadOnlyEntry)
@@ -799,7 +789,6 @@ namespace KeePass.Forms
 			GlobalWindowManager.AddWindow(this);
 
 			m_pwInitialEntry = m_pwEntry.CloneDeep();
-			NormalizeStrings(m_pwInitialEntry.Strings, m_pwDatabase);
 
 			UIUtil.ConfigureToolTip(m_ttRect);
 			UIUtil.SetToolTip(m_ttRect, m_btnIcon, KPRes.SelectIcon, true);
@@ -1127,9 +1116,9 @@ namespace KeePass.Forms
 			if(bPri) m_bTouchedOnce = true;
 
 			bool bUndoBackup = false;
-			PwCompareOptions cmpOpt = m_cmpOpt;
-			if(bCreateBackup) cmpOpt |= PwCompareOptions.IgnoreLastBackup;
-			if(peTarget.EqualsEntry(m_pwInitialEntry, cmpOpt, MemProtCmpMode.CustomOnly))
+			PwCompareOptions pco = c_pcoDefault;
+			if(bCreateBackup) pco |= PwCompareOptions.IgnoreLastBackup;
+			if(peTarget.EqualsEntry(m_pwInitialEntry, pco, MemProtCmpMode.CustomOnly))
 			{
 				// No modifications at all => restore last mod time and undo backup
 				peTarget.LastModificationTime = m_pwInitialEntry.LastModificationTime;
@@ -1139,8 +1128,8 @@ namespace KeePass.Forms
 			{
 				// If only history items have been modified (deleted) => undo
 				// backup, but without restoring the last mod time
-				PwCompareOptions cmpOptNH = (m_cmpOpt | PwCompareOptions.IgnoreHistory);
-				if(peTarget.EqualsEntry(m_pwInitialEntry, cmpOptNH, MemProtCmpMode.CustomOnly))
+				const PwCompareOptions pcoNH = (c_pcoDefault | PwCompareOptions.IgnoreHistory);
+				if(peTarget.EqualsEntry(m_pwInitialEntry, pcoNH, MemProtCmpMode.CustomOnly))
 					bUndoBackup = true;
 			}
 			if(bUndoBackup) peTarget.History.RemoveAt(peTarget.History.UCount - 1);
@@ -2141,7 +2130,7 @@ namespace KeePass.Forms
 			PwEntry pe = m_pwInitialEntry.CloneDeep();
 			SaveEntry(pe, false);
 
-			return (!pe.EqualsEntry(m_pwInitialEntry, m_cmpOpt,
+			return (!pe.EqualsEntry(m_pwInitialEntry, c_pcoDefault,
 				MemProtCmpMode.CustomOnly) || !m_icgPassword.ValidateData(false));
 		}
 
@@ -2505,21 +2494,6 @@ namespace KeePass.Forms
 
 			EnableControlsEx();
 			UIUtil.SetFocus(m_lvCustomData, this);
-		}
-
-		private static void NormalizeStrings(ProtectedStringDictionary d,
-			PwDatabase pd)
-		{
-			if(d == null) { Debug.Assert(false); return; }
-
-			MemoryProtectionConfig mpc = ((pd != null) ? pd.MemoryProtection :
-				(new MemoryProtectionConfig()));
-
-			string str = d.ReadSafe(PwDefs.NotesField);
-			d.Set(PwDefs.NotesField, new ProtectedString(mpc.ProtectNotes,
-				StrUtil.NormalizeNewLines(str, true)));
-
-			// Custom strings are normalized by the string editing form
 		}
 
 		private void InitUserNameSuggestions()

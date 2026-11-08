@@ -48,7 +48,7 @@ namespace KeePass.Forms
 		private int m_iAssocIndex = -1;
 		private bool m_bEditSequenceOnly = false;
 		private string m_strDefaultSeq = string.Empty;
-		private ProtectedStringDictionary m_vStringDict = null;
+		private ProtectedStringDictionary m_dStrings = null;
 
 		private readonly object m_objDialogSync = new object();
 		private bool m_bDialogClosed = false;
@@ -67,6 +67,11 @@ namespace KeePass.Forms
 		private readonly RichTextBoxContextMenu m_ctxKeyCodes = new RichTextBoxContextMenu();
 		private bool m_bBlockUpdates = false;
 
+		private readonly string m_strHelpSeq = KPRes.AutoTypeSequences;
+		private readonly string m_strHelpSeqEx = KPRes.AutoTypeSequences + " - " +
+			KPRes.Examples;
+		private readonly string m_strHelpPlh = KPRes.Placeholders;
+
 		public EditAutoTypeItemForm()
 		{
 			InitializeComponent();
@@ -74,7 +79,7 @@ namespace KeePass.Forms
 		}
 
 		public void InitEx(AutoTypeConfig atConfig, int iAssocIndex, bool bEditSequenceOnly,
-			string strDefaultSeq, ProtectedStringDictionary vStringDict)
+			string strDefaultSeq, ProtectedStringDictionary dStrings)
 		{
 			if(atConfig == null) { Debug.Assert(false); throw new ArgumentNullException("atConfig"); }
 
@@ -82,17 +87,17 @@ namespace KeePass.Forms
 			m_iAssocIndex = iAssocIndex;
 			m_bEditSequenceOnly = bEditSequenceOnly;
 			m_strDefaultSeq = (strDefaultSeq ?? string.Empty);
-			m_vStringDict = (vStringDict ?? new ProtectedStringDictionary());
+			m_dStrings = (dStrings ?? new ProtectedStringDictionary());
 		}
 
 		private void OnFormLoad(object sender, EventArgs e)
 		{
 			if(m_atConfig == null) { Debug.Assert(false); throw new InvalidOperationException(); }
-			if(m_vStringDict == null) { Debug.Assert(false); throw new InvalidOperationException(); }
+			if(m_dStrings == null) { Debug.Assert(false); throw new InvalidOperationException(); }
 
 			GlobalWindowManager.AddWindow(this);
 
-			m_ctxKeySeq.Attach(m_rbKeySeq, this);
+			m_ctxKeySeq.Attach(m_rtbKeySeq, this);
 			m_ctxKeyCodes.Attach(m_rtbPlaceholders, this);
 
 			if(!m_bEditSequenceOnly)
@@ -113,8 +118,9 @@ namespace KeePass.Forms
 			// FontUtil.AssignDefaultBold(m_lblTargetWindow);
 			// FontUtil.AssignDefaultBold(m_rbSeqDefault);
 			// FontUtil.AssignDefaultBold(m_rbSeqCustom);
+			FontUtil.AssignDefaultMono(m_rtbKeySeq, false);
 
-			AccessibilityEx.SetContext(m_rbKeySeq, m_rbSeqCustom);
+			AccessibilityEx.SetContext(m_rtbKeySeq, m_rbSeqCustom);
 
 			UIUtil.EnableAutoCompletion(m_cmbWindow, false);
 
@@ -126,7 +132,7 @@ namespace KeePass.Forms
 			if(bRtl)
 			{
 				// https://sourceforge.net/p/keepass/discussion/329220/thread/f98dece5/
-				m_rbKeySeq.RightToLeft = RightToLeft.No;
+				m_rtbKeySeq.RightToLeft = RightToLeft.No;
 				m_rtbPlaceholders.RightToLeft = RightToLeft.No;
 			}
 
@@ -154,8 +160,8 @@ namespace KeePass.Forms
 			}
 			m_bBlockUpdates = false;
 
-			if(bSetDefault) m_rbKeySeq.Text = m_strDefaultSeq;
-			else m_rbKeySeq.Text = strInitSeq;
+			if(bSetDefault) m_rtbKeySeq.Text = m_strDefaultSeq;
+			else m_rtbKeySeq.Text = strInitSeq;
 
 			try
 			{
@@ -169,142 +175,152 @@ namespace KeePass.Forms
 
 		private void InitPlaceholdersBox(bool bRtl)
 		{
-			const string VkcBreak = "<break />";
+			string[] vSpecialKeys = new string[] {
+				"{TAB}", "{ENTER}", "{UP}", "{DOWN}", "{LEFT}", "{RIGHT}",
+				"{INSERT}", "{DELETE}", "{HOME}", "{END}", "{PGUP}", "{PGDN}",
+				"{SPACE}", null,
 
-			string[] vSpecialKeyCodes = new string[] {
-				"TAB", "ENTER", "UP", "DOWN", "LEFT", "RIGHT",
-				"HOME", "END", "PGUP", "PGDN",
-				"INSERT", "DELETE", "SPACE", VkcBreak,
+				"{BACKSPACE}", "{BREAK}", "{CAPSLOCK}", "{ESC}",
+				"{WIN}", "{LWIN}", "{RWIN}", "{APPS}", "{HELP}",
+				"{NUMLOCK}", "{PRTSC}", "{SCROLLLOCK}", null,
 
-				"BACKSPACE", "BREAK", "CAPSLOCK", "ESC",
-				"WIN", "LWIN", "RWIN", "APPS",
-				"HELP", "NUMLOCK", "PRTSC", "SCROLLLOCK", VkcBreak,
+				"{F1}", "{F2}", "{F3}", "{F4}", "{F5}", "{F6}", "{F7}", "{F8}",
+				"{F9}", "{F10}", "{F11}", "{F12}", "{F13}", "{F14}", "{F15}",
+				"{F16}", null,
 
-				"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12",
-				"F13", "F14", "F15", "F16", VkcBreak,
-
-				"ADD", "SUBTRACT", "MULTIPLY", "DIVIDE",
-				"NUMPAD0", "NUMPAD1", "NUMPAD2", "NUMPAD3", "NUMPAD4",
-				"NUMPAD5", "NUMPAD6", "NUMPAD7", "NUMPAD8", "NUMPAD9"
+				"{ADD}", "{SUBTRACT}", "{MULTIPLY}", "{DIVIDE}",
+				"{NUMPAD0}", "{NUMPAD1}", "{NUMPAD2}", "{NUMPAD3}", "{NUMPAD4}",
+				"{NUMPAD5}", "{NUMPAD6}", "{NUMPAD7}", "{NUMPAD8}", "{NUMPAD9}"
 			};
 
-			string[] vSpecialPlaceholders = new string[] {
-				"GROUP", "GROUP_PATH", "GROUP_NOTES",
-				"GROUP_SEL", "GROUP_SEL_PATH", "GROUP_SEL_NOTES",
-				"PASSWORD_ENC",
-				"URL:RMVSCM", "URL:SCM", "URL:HOST", "URL:PORT", "URL:PATH",
-				"URL:QUERY", "URL:USERINFO", "URL:USERNAME", "URL:PASSWORD",
-				// "BASE",
-				"UUID",
-				"T-REPLACE-RX:/T/S/R/", "T-CONV:/T/C/",
-				"C:Comment", VkcBreak,
+			string[] vPlaceholders = new string[] {
+				"{GROUP}", "{GROUP_PATH}", "{GROUP_NOTES}",
+				"{GROUP_SEL}", "{GROUP_SEL_PATH}", "{GROUP_SEL_NOTES}",
+				"{PASSWORD_ENC}",
+				"{URL:RMVSCM}", "{URL:SCM}", "{URL:HOST}", "{URL:PORT}",
+				"{URL:PATH}", "{URL:QUERY}", "{URL:USERINFO}", "{URL:USERNAME}",
+				"{URL:PASSWORD}",
+				// "{BASE}",
+				"{UUID}", "{T-REPLACE-RX:/T/S/R/}", "{T-CONV:/T/C/}",
+				"{C:Comment}", null,
 
-				"DELAY 1000", "DELAY=200", "VKEY 13", "VKEY 13 E",
-				// "VKEY-NX 13", "VKEY-EX 13",
-				"PICKCHARS", "PICKCHARS:Password:C=3", "PICKFIELD",
-				"NEWPASSWORD", "NEWPASSWORD:/Profile/",
-				"HMACOTP", "TIMEOTP", "CLEARFIELD",
+				"{DELAY 1000}", "{DELAY=200}", "{VKEY 13}", "{VKEY 13 E}",
+				// "{VKEY-NX 13}", "{VKEY-EX 13}", // Backward compatibility
+				"{PICKCHARS}", "{PICKCHARS:Password:C=3}", "{PICKFIELD}",
+				"{NEWPASSWORD}", "{NEWPASSWORD:/Profile/}",
+				"{HMACOTP}", "{TIMEOTP}", "{CLEARFIELD}",
 				// https://sourceforge.net/p/keepass/discussion/329220/thread/f98dece5/
-				"APPACTIVATE " + (bRtl ? "Title" : KPRes.Title),
-				"BEEP 800 200", "CLIPBOARD", "CLIPBOARD-SET:/T/",
-				"CMD:/C/O/", VkcBreak,
+				"{APPACTIVATE " + (bRtl ? "Title" : KPRes.Title) + "}",
+				"{BEEP 800 200}", "{CLIPBOARD}", "{CLIPBOARD-SET:/T/}",
+				"{CMD:/C/O/}", null,
 
-				"APPDIR", "DB_PATH", "DB_DIR", "DB_NAME", "DB_BASENAME", "DB_EXT",
-				"ENV_DIRSEP", "ENV_PROGRAMFILES_X86", VkcBreak,
+				"{APPDIR}",
+				"{DB_PATH}", "{DB_DIR}", "{DB_NAME}", "{DB_BASENAME}", "{DB_EXT}",
+				"{ENV_DIRSEP}", "{ENV_PROGRAMFILES_X86}", null,
 
-				// "EDGE", "FIREFOX", "GOOGLECHROME", "INTERNETEXPLORER", "OPERA",
-				// "SAFARI", VkcBreak,
+				// "{EDGE}", "{FIREFOX}", "{GOOGLECHROME}", "{INTERNETEXPLORER}",
+				// "{OPERA}", "{SAFARI}", null,
 
-				"DT_SIMPLE", "DT_YEAR", "DT_MONTH", "DT_DAY", "DT_HOUR", "DT_MINUTE",
-				"DT_SECOND", "DT_UTC_SIMPLE", "DT_UTC_YEAR", "DT_UTC_MONTH",
-				"DT_UTC_DAY", "DT_UTC_HOUR", "DT_UTC_MINUTE", "DT_UTC_SECOND"
+				"{DT_SIMPLE}", "{DT_YEAR}", "{DT_MONTH}", "{DT_DAY}",
+				"{DT_HOUR}", "{DT_MINUTE}", "{DT_SECOND}",
+				"{DT_UTC_SIMPLE}", "{DT_UTC_YEAR}", "{DT_UTC_MONTH}", "{DT_UTC_DAY}",
+				"{DT_UTC_HOUR}", "{DT_UTC_MINUTE}", "{DT_UTC_SECOND}"
 			};
-
-			string strSfx = (bRtl ? string.Empty : ":");
 
 			RichTextBuilder rb = new RichTextBuilder();
-			rb.AppendLine(KPRes.StandardFields, FontStyle.Bold, null, null, strSfx, null);
+			List<KeyValuePair<string, bool>> lTexts = new List<KeyValuePair<string, bool>>();
+			bool bFirstSection = true, bNewSection = false;
 
-			List<string> lStd = PwDefs.GetStandardFields();
-			for(int i = 0; i < lStd.Count; ++i)
-				rb.Append(((i == 0) ? "{" : " {") + lStd[i].ToUpperInvariant() + "}");
-
-			bool bCustomInitialized = false, bFirst = true;
-			foreach(KeyValuePair<string, ProtectedString> kvp in m_vStringDict)
+			Action<string> fAddSection = delegate(string str)
 			{
-				if(!PwDefs.IsStandardField(kvp.Key))
+				if(string.IsNullOrEmpty(str)) { Debug.Assert(false); str = "?"; }
+
+				if(bFirstSection) bFirstSection = false;
+				else { rb.AppendLine(); rb.AppendLine(); }
+
+				rb.AppendLine(str, FontStyle.Bold, null, null, (bRtl ?
+					string.Empty : ":"), null);
+				lTexts.Add(new KeyValuePair<string, bool>(str, false));
+
+				bNewSection = true;
+			};
+
+			Action<string, bool, bool> fAdd = delegate(string str, bool bLink,
+				bool bSep)
+			{
+				if(string.IsNullOrEmpty(str)) { Debug.Assert(false); return; }
+				Debug.Assert(StrUtil.Count(str, "{") == StrUtil.Count(str, "}"));
+
+				if(bNewSection) bNewSection = false;
+				else if(bSep) rb.Append(" ");
+
+				rb.Append(str);
+				lTexts.Add(new KeyValuePair<string, bool>(str, bLink));
+			};
+
+			Action<string, IEnumerable<string>, bool> fAddList = delegate(
+				string strSection, IEnumerable<string> eItems, bool bNewParaOnEmpty)
+			{
+				fAddSection(strSection);
+
+				foreach(string str in eItems)
 				{
-					if(!bCustomInitialized)
+					if(string.IsNullOrEmpty(str))
 					{
-						rb.AppendLine();
-						rb.AppendLine();
-						rb.AppendLine(KPRes.CustomFields, FontStyle.Bold,
-							null, null, strSfx, null);
-						bCustomInitialized = true;
+						if(bNewParaOnEmpty)
+						{
+							rb.AppendLine();
+							rb.AppendLine();
+							bNewSection = true;
+						}
 					}
-
-					if(!bFirst) rb.Append(" ");
-					rb.Append("{" + PwDefs.AutoTypeStringPrefix + kvp.Key + "}");
-					bFirst = false;
+					else fAdd(str, true, true);
 				}
-			}
+			};
 
+			fAddSection(KPRes.Help);
+			fAdd(m_strHelpSeq, true, false);
 			rb.AppendLine();
+			fAdd(m_strHelpSeqEx, true, false);
+			fAdd("(" + KPRes.LoginTypes + ")", false, true);
 			rb.AppendLine();
-			rb.AppendLine(KPRes.KeyboardKeyModifiers, FontStyle.Bold, null, null, strSfx, null);
-			rb.Append(KPRes.KeyboardKeyShift + ": +, ");
-			rb.Append(KPRes.KeyboardKeyCtrl + ": ^, ");
-			rb.Append(KPRes.KeyboardKeyAlt + ": %");
+			fAdd(m_strHelpPlh, true, false);
 
-			rb.AppendLine();
-			rb.AppendLine();
-			rb.AppendLine(KPRes.SpecialKeys, FontStyle.Bold, null, null, strSfx, null);
-			bFirst = true;
-			foreach(string strNav in vSpecialKeyCodes)
+			fAddSection(KPRes.StandardFields);
+			foreach(string str in PwDefs.GetStandardFields())
+				fAdd("{" + str.ToUpperInvariant() + "}", true, true);
+
+			bool bCustom = false;
+			foreach(KeyValuePair<string, ProtectedString> kvp in m_dStrings)
 			{
-				if(strNav == VkcBreak) { rb.AppendLine(); rb.AppendLine(); bFirst = true; }
-				else
+				if(PwDefs.IsStandardField(kvp.Key)) continue;
+
+				if(!bCustom)
 				{
-					if(!bFirst) rb.Append(" ");
-					rb.Append("{" + strNav + "}");
-					bFirst = false;
+					fAddSection(KPRes.CustomFields);
+					bCustom = true;
 				}
+
+				fAdd("{" + PwDefs.AutoTypeStringPrefix + kvp.Key + "}", true, true);
 			}
 
-			rb.AppendLine();
-			rb.AppendLine();
-			rb.AppendLine(KPRes.OtherPlaceholders, FontStyle.Bold, null, null, strSfx, null);
-			bFirst = true;
-			foreach(string strPH in vSpecialPlaceholders)
-			{
-				if(strPH == VkcBreak) { rb.AppendLine(); rb.AppendLine(); bFirst = true; }
-				else
-				{
-					if(!bFirst) rb.Append(" ");
-					rb.Append("{" + strPH + "}");
-					bFirst = false;
-				}
-			}
+			fAddSection(KPRes.KeyboardKeyModifiers);
+			fAdd(KPRes.KeyboardKeyShift + ": ", false, false);
+			fAdd("+", true, false);
+			fAdd(", " + KPRes.KeyboardKeyCtrl + ": ", false, false);
+			fAdd("^", true, false);
+			fAdd(", " + KPRes.KeyboardKeyAlt + ": ", false, false);
+			fAdd("%", true, false);
 
-			if(SprEngine.FilterPlaceholderHints.Count > 0)
-			{
-				rb.AppendLine();
-				rb.AppendLine();
-				rb.AppendLine(KPRes.PluginProvided, FontStyle.Bold, null, null, strSfx, null);
-				bFirst = true;
-				foreach(string strP in SprEngine.FilterPlaceholderHints)
-				{
-					if(string.IsNullOrEmpty(strP)) continue;
+			fAddList(KPRes.SpecialKeys, vSpecialKeys, true);
+			fAddList(KPRes.OtherPlaceholders, vPlaceholders, true);
 
-					if(!bFirst) rb.Append(" ");
-					rb.Append(strP);
-					bFirst = false;
-				}
-			}
+			if(SprEngine.FilterPlaceholderHints.Count != 0)
+				fAddList(KPRes.PluginProvided, SprEngine.FilterPlaceholderHints, false);
 
 			rb.Build(m_rtbPlaceholders, true);
-
-			LinkifyRtf(m_rtbPlaceholders);
+			UIUtil.RtfLinkifyTexts(m_rtbPlaceholders, lTexts, true);
+			m_rtbPlaceholders.Select(0, 0);
 		}
 
 		private void OnFormShown(object sender, EventArgs e)
@@ -312,8 +328,8 @@ namespace KeePass.Forms
 			// Focusing doesn't work in OnFormLoad
 			if(m_cmbWindow.Enabled)
 				UIUtil.SetFocus(m_cmbWindow, this, true);
-			else if(m_rbKeySeq.Enabled)
-				UIUtil.SetFocus(m_rbKeySeq, this, true);
+			else if(m_rtbKeySeq.Enabled)
+				UIUtil.SetFocus(m_rtbKeySeq, this, true);
 			else UIUtil.SetFocus(m_btnOK, this, true);
 		}
 
@@ -343,7 +359,7 @@ namespace KeePass.Forms
 			EnableControlsEx();
 			Debug.Assert(m_btnOK.Enabled); if(!m_btnOK.Enabled) return;
 
-			string strNewSeq = (m_rbSeqCustom.Checked ? m_rbKeySeq.Text : string.Empty);
+			string strNewSeq = (m_rbSeqCustom.Checked ? m_rtbKeySeq.Text : string.Empty);
 
 			if(!m_bEditSequenceOnly)
 			{
@@ -419,7 +435,7 @@ namespace KeePass.Forms
 			m_lnkWildcardRegexHint.Visible = !m_bEditSequenceOnly;
 
 			bool bCustom = m_rbSeqCustom.Checked;
-			m_rbKeySeq.Enabled = bCustom;
+			m_rtbKeySeq.Enabled = bCustom;
 			m_lblKeySeqInsertInfo.Enabled = bCustom;
 			m_rtbPlaceholders.Enabled = bCustom;
 
@@ -432,81 +448,40 @@ namespace KeePass.Forms
 			ctx.EncodeAsAutoTypeSequence = true;
 
 			PwEntry pe = new PwEntry(true, true);
-			pe.Strings = m_vStringDict;
+			pe.Strings = m_dStrings;
 			ctx.Entry = pe;
 
-			SprSyntax.Highlight(m_rbKeySeq, ctx);
+			SprSyntax.Highlight(m_rtbKeySeq, ctx);
 		}
-
-		/* private void ColorizeKeySeq()
-		{
-			string strText = m_rbKeySeq.Text;
-
-			int iSelStart = m_rbKeySeq.SelectionStart, iSelLen = m_rbKeySeq.SelectionLength;
-
-			m_rbKeySeq.SelectAll();
-			m_rbKeySeq.SelectionBackColor = SystemColors.Window;
-
-			int iStart = 0;
-			while(true)
-			{
-				int iPos = strText.IndexOf('{', iStart);
-				if(iPos < 0) break;
-
-				int iEnd = strText.IndexOf('}', iPos + 1);
-				if(iEnd < 0) break;
-
-				m_rbKeySeq.Select(iPos, iEnd - iPos + 1);
-				m_rbKeySeq.SelectionBackColor = Color.FromArgb(212, 255, 212);
-				iStart = iEnd;
-			}
-
-			m_rbKeySeq.SelectionStart = iSelStart;
-			m_rbKeySeq.SelectionLength = iSelLen;
-		} */
 
 		private void OnTextChangedKeySeq(object sender, EventArgs e)
 		{
 			ColorizeKeySeq();
 		}
 
-		private static void LinkifyRtf(RichTextBox rtb)
-		{
-			string str = (rtb.Text ?? string.Empty);
-			int iOffset = 0;
-
-			while(iOffset < str.Length)
-			{
-				int iStart = str.IndexOf('{', iOffset);
-				if(iStart < iOffset) break;
-
-				int iEnd = str.IndexOf('}', iStart);
-				if(iEnd <= iStart) { Debug.Assert(false); break; }
-
-				rtb.Select(iStart, iEnd - iStart + 1);
-				UIUtil.RtfSetSelectionLink(rtb);
-
-				iOffset = iEnd + 1;
-			}
-
-			rtb.Select(0, 0);
-		}
-
 		private void OnPlaceholdersLinkClicked(object sender, LinkClickedEventArgs e)
 		{
-			if(!m_rbSeqCustom.Checked) m_rbSeqCustom.Checked = true;
+			string strLink = e.LinkText;
 
-			int nSelStart = m_rbKeySeq.SelectionStart;
-			int nSelLength = m_rbKeySeq.SelectionLength;
-			string strText = m_rbKeySeq.Text;
-			string strUrl = e.LinkText;
+			if(string.IsNullOrEmpty(strLink)) { Debug.Assert(false); }
+			else if(strLink == m_strHelpSeq)
+				AppHelp.ShowHelp(AppDefs.HelpTopics.AutoType, AppDefs.HelpTopics.AutoTypeSeq);
+			else if(strLink == m_strHelpSeqEx)
+				AppHelp.ShowHelp(AppDefs.HelpTopics.AutoType, AppDefs.HelpTopics.AutoTypeSeqEx);
+			else if(strLink == m_strHelpPlh)
+				AppHelp.ShowHelp(AppDefs.HelpTopics.Placeholders, null);
+			else
+			{
+				string strText = m_rtbKeySeq.Text;
+				int i = m_rtbKeySeq.SelectionStart, c = m_rtbKeySeq.SelectionLength;
 
-			if(nSelLength > 0)
-				strText = strText.Remove(nSelStart, nSelLength);
+				if(c > 0) strText = strText.Remove(i, c);
 
-			m_rbKeySeq.Text = strText.Insert(nSelStart, strUrl);
-			m_rbKeySeq.Select(nSelStart + strUrl.Length, 0);
-			UIUtil.SetFocus(m_rbKeySeq, this);
+				m_rtbKeySeq.Text = strText.Insert(i, strLink);
+				m_rtbKeySeq.Select(i + strLink.Length, 0);
+
+				UIUtil.SetFocus(m_rtbKeySeq, this);
+			}
 		}
 
 		private void OnWindowTextUpdate(object sender, EventArgs e)
@@ -560,12 +535,11 @@ namespace KeePass.Forms
 			NativeMethods.EnumWindows(procEnum, IntPtr.Zero);
 			GC.KeepAlive(procEnum); // Like in MainWindowFinder.FindMainWindow
 
-			// On Windows 8 and higher, EnumWindows does not return Metro
-			// app windows, thus we try to discover these windows using
-			// the FindWindowEx function; we do this in addition to EnumWindows,
-			// because calling FindWindowEx in a loop is less reliable (and
-			// by additionally using EnumWindows we at least get all desktop
-			// windows for sure)
+			// EnumWindows does not return all windows, thus we try to discover
+			// the remaining ones using the FindWindowEx function; we do this
+			// in addition to EnumWindows, because calling FindWindowEx in a
+			// loop is less reliable (and by additionally using EnumWindows we
+			// at least get all regular windows for sure)
 			if(WinUtil.IsAtLeastWindows8)
 			{
 				int nMax = (hsHWnds.Count * 2) + 2;
@@ -669,7 +643,7 @@ namespace KeePass.Forms
 			if(string.IsNullOrEmpty(strWindows)) return;
 
 			strWindows = StrUtil.NormalizeNewLines(strWindows, false);
-			string[] vWindows = strWindows.Split(new char[] { '\n' });
+			string[] vWindows = strWindows.Split('\n');
 
 			List<string> vListed = new List<string>();
 			for(int i = 0; i < vWindows.Length; ++i)

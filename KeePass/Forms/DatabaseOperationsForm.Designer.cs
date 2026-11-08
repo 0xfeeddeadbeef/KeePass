@@ -66,7 +66,6 @@
 			this.m_btnClose.TabIndex = 0;
 			this.m_btnClose.Text = "Close";
 			this.m_btnClose.UseVisualStyleBackColor = true;
-			this.m_btnClose.Click += new System.EventHandler(this.OnBtnClose);
 			// 
 			// m_bannerImage
 			// 
@@ -290,6 +289,7 @@
 			this.Text = "<DYN>";
 			this.Load += new System.EventHandler(this.OnFormLoad);
 			this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.OnFormClosed);
+			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.OnFormClosing);
 			((System.ComponentModel.ISupportInitialize)(this.m_bannerImage)).EndInit();
 			this.m_grpHistoryDelete.ResumeLayout(false);
 			this.m_grpHistoryDelete.PerformLayout();

@@ -20,12 +20,15 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Serialization;
 using System.Xml.XPath;
+using System.Xml.Xsl;
 
 using KeePassLib.Delegates;
 using KeePassLib.Interfaces;
@@ -258,66 +261,29 @@ namespace KeePassLib.Utility
 				}
 			}
 
-			XPathNavigator xpNav = xd.CreateNavigator();
-			return xpNav.Select(strXPath);
-			// XPathExpression xpExpr = xpNav.Compile(strXPath);
-			// xpExpr.SetContext(new XuXsltContext());
-			// return xpNav.Select(xpExpr);
+			XPathNavigator xpn = xd.CreateNavigator();
+			XPathExpression xpe = xpn.Compile(strXPath);
+			xpe.SetContext(new XueXsltContext());
+			return xpn.Select(xpe);
 		}
 
-		/* private sealed class XuFnMatches : IXsltContextFunction
+		private sealed class XueXsltContext : XsltContext
 		{
-			private readonly XPathResultType[] m_vArgTypes = new XPathResultType[] {
-				XPathResultType.String, XPathResultType.String, XPathResultType.String
-			};
-			public XPathResultType[] ArgTypes { get { return m_vArgTypes; } }
+			private const string g_strNamespace = "urn:custom-kp";
 
-			public int Maxargs { get { return 3; } }
-			public int Minargs { get { return 2; } }
+			private readonly XueXcfMatches m_xcfMatches = new XueXcfMatches();
+			private readonly XueXcfStringCompare m_xcfStringCompare = new XueXcfStringCompare();
 
-			public XPathResultType ReturnType { get { return XPathResultType.Boolean; } }
-
-			private static string GetArgString(object[] args, int i, string strDefault)
-			{
-				if(args == null) { Debug.Assert(false); return strDefault; }
-				if(i >= args.Length) return strDefault;
-
-				object o = args[i];
-				if(o == null) return strDefault;
-
-				XPathNodeIterator it = (o as XPathNodeIterator);
-				if(it != null) o = it.Current.Value;
-
-				return (o.ToString() ?? strDefault);
-			}
-
-			public object Invoke(XsltContext xsltContext, object[] args,
-				XPathNavigator docContext)
-			{
-				string strInput = GetArgString(args, 0, string.Empty);
-				string strPattern = GetArgString(args, 1, string.Empty);
-				string strFlags = GetArgString(args, 2, null);
-
-				RegexOptions ro = RegexOptions.None;
-				if(!string.IsNullOrEmpty(strFlags))
-				{
-					if(strFlags.IndexOf('s') >= 0) ro |= RegexOptions.Singleline;
-					if(strFlags.IndexOf('m') >= 0) ro |= RegexOptions.Multiline;
-					if(strFlags.IndexOf('i') >= 0) ro |= RegexOptions.IgnoreCase;
-					if(strFlags.IndexOf('x') >= 0) ro |= RegexOptions.IgnorePatternWhitespace;
-				}
-
-				return Regex.IsMatch(strInput, strPattern, ro);
-			}
-		}
-
-		private sealed class XuXsltContext : XsltContext
-		{
 			public override bool Whitespace { get { return false; } }
+
+			public XueXsltContext()
+			{
+				AddNamespace("kp", g_strNamespace);
+			}
 
 			public override int CompareDocument(string baseUri, string nextbaseUri)
 			{
-				return string.CompareOrdinal(baseUri, nextbaseUri);
+				return Math.Sign(string.CompareOrdinal(baseUri, nextbaseUri));
 			}
 
 			public override bool PreserveWhitespace(XPathNavigator node)
@@ -328,20 +294,126 @@ namespace KeePassLib.Utility
 			public override IXsltContextFunction ResolveFunction(string prefix,
 				string name, XPathResultType[] ArgTypes)
 			{
-				if(prefix != "kp") { Debug.Assert(false); return null; }
+				if(string.IsNullOrEmpty(prefix) || (LookupNamespace(prefix) !=
+					g_strNamespace))
+					return null;
 
-				if(name == "matches") return new XuFnMatches();
+				if(name == "matches") return m_xcfMatches;
+				if(name == "string-compare") return m_xcfStringCompare;
 
-				Debug.Assert(false);
 				return null;
 			}
 
 			public override IXsltContextVariable ResolveVariable(string prefix,
 				string name)
 			{
-				Debug.Assert(false);
 				return null;
 			}
-		} */
+		}
+
+		private static string XcfGetString(object[] v, int i)
+		{
+			if((v == null) || (i < 0)) { Debug.Assert(false); return string.Empty; }
+			if(i >= v.Length) return string.Empty;
+
+			object o = v[i];
+
+			XPathNodeIterator it = (o as XPathNodeIterator);
+			if(it != null) o = (it.MoveNext() ? it.Current.Value : null);
+
+			return (((o != null) ? o.ToString() : null) ?? string.Empty);
+		}
+
+		// Cf. https://www.w3.org/TR/xpath-functions/#func-matches
+		private sealed class XueXcfMatches : IXsltContextFunction
+		{
+			private readonly XPathResultType[] m_vArgTypes = new XPathResultType[] {
+				XPathResultType.String, XPathResultType.String, XPathResultType.String };
+			public XPathResultType[] ArgTypes { get { return m_vArgTypes; } }
+
+			public int Minargs { get { return 2; } }
+			public int Maxargs { get { return 3; } }
+
+			public XPathResultType ReturnType { get { return XPathResultType.Boolean; } }
+
+			public object Invoke(XsltContext xsltContext, object[] args,
+				XPathNavigator docContext)
+			{
+				string strInput = XcfGetString(args, 0);
+				string strPattern = XcfGetString(args, 1);
+				string strFlags = XcfGetString(args, 2);
+
+				RegexOptions ro = RegexOptions.None;
+				foreach(char ch in strFlags)
+				{
+					switch(ch)
+					{
+						case 's': ro |= RegexOptions.Singleline; break;
+						case 'm': ro |= RegexOptions.Multiline; break;
+						case 'i': ro |= RegexOptions.IgnoreCase; break;
+						case 'x': ro |= RegexOptions.IgnorePatternWhitespace; break;
+						case 'q': strPattern = Regex.Escape(strPattern); break;
+						default: throw new ArgumentOutOfRangeException("strFlags");
+					}
+				}
+
+				return Regex.IsMatch(strInput, strPattern, ro);
+			}
+		}
+
+		// Cf. https://learn.microsoft.com/en-us/previous-versions/dotnet/netframework-4.0/ms256114(v=vs.100)
+		private sealed class XueXcfStringCompare : IXsltContextFunction
+		{
+			private readonly XPathResultType[] m_vArgTypes = new XPathResultType[] {
+				XPathResultType.String, XPathResultType.String, XPathResultType.String,
+				XPathResultType.String };
+			public XPathResultType[] ArgTypes { get { return m_vArgTypes; } }
+
+			public int Minargs { get { return 2; } }
+			public int Maxargs { get { return 4; } }
+
+			public XPathResultType ReturnType { get { return XPathResultType.Number; } }
+
+			public object Invoke(XsltContext xsltContext, object[] args,
+				XPathNavigator docContext)
+			{
+				string strX = XcfGetString(args, 0);
+				string strY = XcfGetString(args, 1);
+				string strLang = XcfGetString(args, 2);
+				string strOptions = XcfGetString(args, 3);
+
+				CultureInfo ci = ((strLang.Length == 0) ? CultureInfo.CurrentCulture :
+					new CultureInfo(strLang));
+
+				CompareOptions co = CompareOptions.None;
+				bool bU = false;
+				foreach(char ch in strOptions)
+				{
+					switch(ch)
+					{
+						case 'u': bU = true; break;
+						case 'i':
+							co |= CompareOptions.IgnoreCase | CompareOptions.IgnoreKanaType |
+								CompareOptions.IgnoreWidth;
+							break;
+						default: throw new ArgumentOutOfRangeException("strOptions");
+					}
+				}
+
+				if(bU)
+				{
+					if(co != CompareOptions.None)
+						throw new ArgumentOutOfRangeException("strOptions");
+					co = CompareOptions.IgnoreCase;
+				}
+
+				int r = Math.Sign(ci.CompareInfo.Compare(strX, strY, co));
+
+				if(bU && (r == 0))
+					r = -Math.Sign(ci.CompareInfo.Compare(strX, strY));
+
+				return r;
+			}
+		}
 	}
 }

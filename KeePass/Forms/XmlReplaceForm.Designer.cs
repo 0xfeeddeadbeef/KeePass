@@ -41,8 +41,8 @@
 			this.m_cbCase = new System.Windows.Forms.CheckBox();
 			this.m_tbReplace = new System.Windows.Forms.TextBox();
 			this.m_lblReplace = new System.Windows.Forms.Label();
-			this.m_tbMatch = new System.Windows.Forms.TextBox();
-			this.m_lblMatch = new System.Windows.Forms.Label();
+			this.m_tbFind = new System.Windows.Forms.TextBox();
+			this.m_lblFind = new System.Windows.Forms.Label();
 			this.m_rbInnerText = new System.Windows.Forms.RadioButton();
 			this.m_rbInnerXml = new System.Windows.Forms.RadioButton();
 			this.m_bannerImage = new System.Windows.Forms.PictureBox();
@@ -93,6 +93,7 @@
 			this.m_tbSelNodes.Name = "m_tbSelNodes";
 			this.m_tbSelNodes.Size = new System.Drawing.Size(460, 20);
 			this.m_tbSelNodes.TabIndex = 2;
+			this.m_tbSelNodes.TextChanged += new System.EventHandler(this.OnSelNodesTextChanged);
 			// 
 			// m_lblData
 			// 
@@ -133,8 +134,8 @@
 			this.m_pnlReplace.Controls.Add(this.m_cbCase);
 			this.m_pnlReplace.Controls.Add(this.m_tbReplace);
 			this.m_pnlReplace.Controls.Add(this.m_lblReplace);
-			this.m_pnlReplace.Controls.Add(this.m_tbMatch);
-			this.m_pnlReplace.Controls.Add(this.m_lblMatch);
+			this.m_pnlReplace.Controls.Add(this.m_tbFind);
+			this.m_pnlReplace.Controls.Add(this.m_lblFind);
 			this.m_pnlReplace.Controls.Add(this.m_rbInnerText);
 			this.m_pnlReplace.Controls.Add(this.m_rbInnerXml);
 			this.m_pnlReplace.Controls.Add(this.m_lblData);
@@ -190,21 +191,22 @@
 			this.m_lblReplace.TabIndex = 6;
 			this.m_lblReplace.Text = "Replace &with:";
 			// 
-			// m_tbMatch
+			// m_tbFind
 			// 
-			this.m_tbMatch.Location = new System.Drawing.Point(6, 44);
-			this.m_tbMatch.Name = "m_tbMatch";
-			this.m_tbMatch.Size = new System.Drawing.Size(441, 20);
-			this.m_tbMatch.TabIndex = 5;
+			this.m_tbFind.Location = new System.Drawing.Point(6, 44);
+			this.m_tbFind.Name = "m_tbFind";
+			this.m_tbFind.Size = new System.Drawing.Size(441, 20);
+			this.m_tbFind.TabIndex = 5;
+			this.m_tbFind.TextChanged += new System.EventHandler(this.OnFindTextChanged);
 			// 
-			// m_lblMatch
+			// m_lblFind
 			// 
-			this.m_lblMatch.AutoSize = true;
-			this.m_lblMatch.Location = new System.Drawing.Point(3, 28);
-			this.m_lblMatch.Name = "m_lblMatch";
-			this.m_lblMatch.Size = new System.Drawing.Size(56, 13);
-			this.m_lblMatch.TabIndex = 4;
-			this.m_lblMatch.Text = "&Find what:";
+			this.m_lblFind.AutoSize = true;
+			this.m_lblFind.Location = new System.Drawing.Point(3, 28);
+			this.m_lblFind.Name = "m_lblFind";
+			this.m_lblFind.Size = new System.Drawing.Size(56, 13);
+			this.m_lblFind.TabIndex = 4;
+			this.m_lblFind.Text = "&Find what:";
 			// 
 			// m_rbInnerText
 			// 
@@ -332,8 +334,8 @@
 		private System.Windows.Forms.Panel m_pnlReplace;
 		private System.Windows.Forms.TextBox m_tbReplace;
 		private System.Windows.Forms.Label m_lblReplace;
-		private System.Windows.Forms.TextBox m_tbMatch;
-		private System.Windows.Forms.Label m_lblMatch;
+		private System.Windows.Forms.TextBox m_tbFind;
+		private System.Windows.Forms.Label m_lblFind;
 		private System.Windows.Forms.RadioButton m_rbInnerText;
 		private System.Windows.Forms.RadioButton m_rbInnerXml;
 		private System.Windows.Forms.PictureBox m_bannerImage;

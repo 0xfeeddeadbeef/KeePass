@@ -95,10 +95,6 @@ namespace KeePass.Plugins
 		public static void Load(string strFilePath, IStatusLogger slStatus)
 		{
 			try { LoadPriv(strFilePath, slStatus, true, true, true, null); }
-			catch(PlgxException exPlgx)
-			{
-				MessageService.ShowWarning(strFilePath, KPRes.PluginLoadFailed, exPlgx);
-			}
 			catch(Exception ex)
 			{
 				PluginManager.ShowLoadError(strFilePath, ex, slStatus);
@@ -306,8 +302,14 @@ namespace KeePass.Plugins
 
 			if(!string.IsNullOrEmpty(strPath) && (pbContent != null))
 			{
-				string strTmpFile = UrlUtil.EnsureTerminatingSeparator(strTmpRoot,
-					false) + UrlUtil.ConvertSeparators(strPath);
+				string strTmpRootT = UrlUtil.EnsureTerminatingSeparator(strTmpRoot,
+					false);
+				string strTmpFile = UrlUtil.GetShortestAbsolutePath(strTmpRootT +
+					UrlUtil.ConvertSeparators(strPath));
+				if(!strTmpFile.StartsWith(strTmpRootT, StringComparison.Ordinal))
+					throw new PlgxException((new UnauthorizedAccessException()).Message +
+						MessageService.NewLine + strPath + MessageService.NewLine +
+						"(" + strTmpFile + ")");
 
 				string strTmpDir = UrlUtil.GetFileDirectory(strTmpFile, false, true);
 				if(!Directory.Exists(strTmpDir)) Directory.CreateDirectory(strTmpDir);
@@ -318,7 +320,7 @@ namespace KeePass.Plugins
 				// Although the temporary directory will be deleted recursively
 				// anyway, add the extracted file here manually, in order to
 				// minimize left-over files in case the recursive deletion fails
-				// due to locked / in-use files
+				// (e.g. due to locked files)
 				Program.TempFilesPool.Add(strTmpFile);
 
 				if(plgx.LogStream != null)
@@ -811,6 +813,12 @@ namespace KeePass.Plugins
 			}
 		}
 
+		// We do not consider running build commands to be a security
+		// vulnerability. After compiling the plugin, KeePass loads it, and at
+		// that point, the plugin can run the same commands (arbitrary code
+		// actually) anyway, with exactly the same rights. Effective security
+		// measures (preventing arbitrary code execution, ...):
+		// https://keepass.info/help/v2/plugins.html#sec
 		private static void RunBuildCommand(string strCmd, string strTmpDir,
 			string strCacheDir)
 		{

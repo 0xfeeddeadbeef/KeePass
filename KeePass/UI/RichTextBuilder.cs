@@ -187,7 +187,7 @@ namespace KeePass.UI
 			m_sb.AppendLine();
 		}
 
-		private static RichTextBox CreateOpRtb(RichTextBox rtbUI)
+		private RichTextBox CreateOpRtb(RichTextBox rtbUI)
 		{
 			RichTextBox rtbOp = new RichTextBox();
 			rtbOp.Visible = false;
@@ -200,6 +200,13 @@ namespace KeePass.UI
 			// rtbOp.ScrollBars = rtbUI.ScrollBars;
 			rtbOp.Size = rtbUI.Size;
 
+			Font f = ((m_fDefault ?? rtbUI.SelectionFont) ?? rtbUI.Font);
+			if(f != null)
+			{
+				rtbOp.Font = f; // For setting Text, etc.
+				// rtbOp.SelectionFont = f; // For setting SelectedText, etc.
+			}
+
 			if(rtbUI.RightToLeft == RightToLeft.Yes)
 			{
 				rtbOp.RightToLeft = RightToLeft.Yes;
@@ -209,7 +216,7 @@ namespace KeePass.UI
 			return rtbOp;
 		}
 
-		private static bool MayGetURtf(RichTextBox rtbUI)
+		private bool MayGetURtf(RichTextBox rtbUI)
 		{
 			if(!g_obURtf.HasValue)
 			{
@@ -279,13 +286,7 @@ namespace KeePass.UI
 			{
 				string strFlt = StrUtil.RtfFilterText(strText);
 				rtbOp.Text = strFlt;
-				Debug.Assert(rtbOp.Text == strFlt); // Test committed
-
-				if(m_fDefault != null)
-				{
-					rtbOp.SelectAll();
-					rtbOp.SelectionFont = m_fDefault;
-				}
+				Debug.Assert(StrUtil.EqualsNLNormalized(rtbOp.Text, strFlt)); // Test committed
 
 				strRtf = rtbOp.Rtf;
 			}

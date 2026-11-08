@@ -281,11 +281,12 @@ namespace KeePassLib
 		}
 
 		/// <summary>
-		/// Custom data container that can be used by plugins to store
-		/// own data in KeePass groups.
-		/// The data is stored in the encrypted part of encrypted
-		/// database files.
+		/// Custom data dictionary, which can be used by plugins/ports to store
+		/// own data in the group.
 		/// Use unique names for your items, e.g. "PluginName_ItemName".
+		/// The data is stored encrypted in a KDBX file, but it is not protected
+		/// in the process memory. Sensitive data should be stored in protected
+		/// entry strings instead.
 		/// </summary>
 		public StringDictionaryEx CustomData
 		{
@@ -414,18 +415,17 @@ namespace KeePassLib
 			return pg;
 		}
 
-		public bool EqualsGroup(PwGroup pg, PwCompareOptions pwOpt,
-			MemProtCmpMode mpCmpStr)
+		public bool EqualsGroup(PwGroup pg, PwCompareOptions pco, MemProtCmpMode mpcm)
 		{
 			if(pg == null) { Debug.Assert(false); return false; }
 
-			bool bIgnoreLastAccess = ((pwOpt & PwCompareOptions.IgnoreLastAccess) !=
+			bool bIgnoreLastAccess = ((pco & PwCompareOptions.IgnoreLastAccess) !=
 				PwCompareOptions.None);
-			bool bIgnoreLastMod = ((pwOpt & PwCompareOptions.IgnoreLastMod) !=
+			bool bIgnoreLastMod = ((pco & PwCompareOptions.IgnoreLastMod) !=
 				PwCompareOptions.None);
 
 			if(!m_pu.Equals(pg.m_pu)) return false;
-			if((pwOpt & PwCompareOptions.IgnoreParentGroup) == PwCompareOptions.None)
+			if((pco & PwCompareOptions.IgnoreParentGroup) == PwCompareOptions.None)
 			{
 				if(m_pgParent != pg.m_pgParent) return false;
 				if(!bIgnoreLastMod && !TimeUtil.EqualsFloor(m_tParentGroupLastMod,
@@ -470,14 +470,14 @@ namespace KeePassLib
 
 			if(!m_dCustomData.Equals(pg.m_dCustomData)) return false;
 
-			if((pwOpt & PwCompareOptions.PropertiesOnly) == PwCompareOptions.None)
+			if((pco & PwCompareOptions.PropertiesOnly) == PwCompareOptions.None)
 			{
 				if(m_lEntries.UCount != pg.m_lEntries.UCount) return false;
 				for(uint u = 0; u < m_lEntries.UCount; ++u)
 				{
 					PwEntry peA = m_lEntries.GetAt(u);
 					PwEntry peB = pg.m_lEntries.GetAt(u);
-					if(!peA.EqualsEntry(peB, pwOpt, mpCmpStr)) return false;
+					if(!peA.EqualsEntry(peB, pco, mpcm)) return false;
 				}
 
 				if(m_lGroups.UCount != pg.m_lGroups.UCount) return false;
@@ -485,7 +485,7 @@ namespace KeePassLib
 				{
 					PwGroup pgA = m_lGroups.GetAt(u);
 					PwGroup pgB = pg.m_lGroups.GetAt(u);
-					if(!pgA.EqualsGroup(pgB, pwOpt, mpCmpStr)) return false;
+					if(!pgA.EqualsGroup(pgB, pco, mpcm)) return false;
 				}
 			}
 

@@ -946,11 +946,12 @@
         </member>
         <member name="P:KeePassLib.PwGroup.CustomData">
             <summary>
-            Custom data container that can be used by plugins to store
-            own data in KeePass groups.
-            The data is stored in the encrypted part of encrypted
-            database files.
+            Custom data dictionary, which can be used by plugins/ports to store
+            own data in the group.
             Use unique names for your items, e.g. "PluginName_ItemName".
+            The data is stored encrypted in a KDBX file, but it is not protected
+            in the process memory. Sensitive data should be stored in protected
+            entry strings instead.
             </summary>
         </member>
         <member name="M:KeePassLib.PwGroup.#ctor">
@@ -1799,7 +1800,7 @@
             2.00 = 0x02000000, 2.01 = 0x02000100, ..., 2.18 = 0x02010800.
             As of 2.19, the version is encoded component-wise per byte,
             e.g. 2.19 = 0x02130000.
-            It is highly recommended to use <c>FileVersion64</c> instead.
+            It is recommended to use <c>FileVersion64</c> instead.
             </summary>
         </member>
         <member name="F:KeePassLib.PwDefs.FileVersion64">
@@ -2005,11 +2006,12 @@
         </member>
         <member name="P:KeePassLib.PwEntry.CustomData">
             <summary>
-            Custom data container that can be used by plugins to store
-            own data in KeePass entries.
-            The data is stored in the encrypted part of encrypted
-            database files.
+            Custom data dictionary, which can be used by plugins/ports to store
+            own data in the entry.
             Use unique names for your items, e.g. "PluginName_ItemName".
+            The data is stored encrypted in a KDBX file, but it is not protected
+            in the process memory. Sensitive data should be stored in protected
+            entry strings instead.
             </summary>
         </member>
         <member name="M:KeePassLib.PwEntry.#ctor(System.Boolean,System.Boolean)">
@@ -2186,23 +2188,23 @@
         </member>
         <member name="P:KeePassLib.PwDatabase.CustomData">
             <summary>
-            Custom data container that can be used by plugins to store
-            own data in KeePass databases.
-            The data is stored in the encrypted part of encrypted
-            database files.
+            Custom data dictionary, which can be used by plugins/ports to store
+            own data in the database.
             Use unique names for your items, e.g. "PluginName_ItemName".
+            The data is stored encrypted in a KDBX file, but it is not protected
+            in the process memory. Sensitive data should be stored in protected
+            entry strings instead.
             </summary>
         </member>
         <member name="P:KeePassLib.PwDatabase.PublicCustomData">
             <summary>
-            Custom data container that can be used by plugins to store
-            own data in KeePass databases.
-            The data is stored in the *unencrypted* part of database files,
-            and it is not supported by all file formats (e.g. supported by KDBX,
-            unsupported by XML).
-            It is highly recommended to use <c>CustomData</c> instead,
-            if possible.
+            Custom data dictionary, which can be used by plugins/ports to store
+            own data in the database.
             Use unique names for your items, e.g. "PluginName_ItemName".
+            The data is stored unencrypted (public) in a file, and it is not
+            supported by all file formats (e.g. supported by KDBX, unsupported
+            by XML).
+            It is recommended to use <c>CustomData</c> instead, if possible.
             </summary>
         </member>
         <member name="P:KeePassLib.PwDatabase.HashOfFileOnDisk">
@@ -2388,9 +2390,8 @@
         </member>
         <member name="F:KeePassLib.PwCompareOptions.NullEmptyEquivStd">
             <summary>
-            Empty standard string fields are considered to be the
-            same as non-existing standard string fields.
-            This doesn't affect custom string comparisons.
+            Consider empty standard string fields to be the same as non-existing
+            standard string fields. This does not affect custom string fields.
             </summary>
         </member>
         <member name="F:KeePassLib.IOAccessType.Read">

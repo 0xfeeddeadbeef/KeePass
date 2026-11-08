@@ -30,15 +30,15 @@ using KeePass.UI;
 
 using KeePassLib;
 using KeePassLib.Delegates;
-using KeePassLib.Utility;
 
 namespace KeePass.Util
 {
 	public static partial class ClipboardUtil
 	{
 		// https://referencesource.microsoft.com/#system.windows.forms/winforms/managed/system/winforms/Clipboard.cs
-		private const int CntUnmanagedRetries = 15; // Default in .NET is 10
-		private const int CntUnmanagedDelay = 100;
+		// https://source.dot.net/#System.Private.Windows.Core/System/Private/Windows/Ole/ClipboardCore.cs
+		private const int NtvRetryCount = 10; // Default in .NET
+		private const int NtvRetryDelay = 100;
 
 		private const string CfnViewerIgnore = "Clipboard Viewer Ignore";
 
@@ -218,12 +218,12 @@ namespace KeePass.Util
 		{
 			if(f == null) { Debug.Assert(false); return false; }
 
-			for(int i = 0; i < CntUnmanagedRetries; ++i)
+			for(int i = 0; i < NtvRetryCount; ++i)
 			{
 				try { if(f()) return true; }
 				catch(Exception) { }
 
-				Thread.Sleep(CntUnmanagedDelay);
+				Thread.Sleep(NtvRetryDelay);
 			}
 
 			Debug.Assert(false);

@@ -273,27 +273,46 @@ namespace KeePassLib.Security
 
 		public bool Equals(ProtectedString ps, bool bCheckProtEqual)
 		{
+			return Equals(ps, bCheckProtEqual, PwCompareOptions.None);
+		}
+
+		internal bool Equals(ProtectedString ps, bool bCheckProtEqual,
+			PwCompareOptions pco)
+		{
 			if(ps == null) throw new ArgumentNullException("ps");
 			if(object.ReferenceEquals(this, ps)) return true; // Perf. opt.
 
 			bool bPA = m_bIsProtected, bPB = ps.m_bIsProtected;
 			if(bCheckProtEqual && (bPA != bPB)) return false;
+
+			if((pco & PwCompareOptions.NormalizeNewLines) != PwCompareOptions.None)
+			{
+				char[] vA = ReadChars(), vB = null;
+				try
+				{
+					vB = ps.ReadChars();
+					return StrUtil.EqualsNLNormalized(vA, vB);
+				}
+				finally
+				{
+					if(bPA) MemUtil.ZeroArray<char>(vA);
+					if(bPB && (vB != null)) MemUtil.ZeroArray<char>(vB);
+				}
+			}
+
 			if(!bPA && !bPB) return (ReadString() == ps.ReadString());
 
 			byte[] pbA = ReadUtf8(), pbB = null;
-			bool bEq;
 			try
 			{
 				pbB = ps.ReadUtf8();
-				bEq = MemUtil.ArraysEqual(pbA, pbB);
+				return MemUtil.ArraysEqual(pbA, pbB);
 			}
 			finally
 			{
 				if(bPA) MemUtil.ZeroByteArray(pbA);
 				if(bPB && (pbB != null)) MemUtil.ZeroByteArray(pbB);
 			}
-
-			return bEq;
 		}
 
 		public ProtectedString Insert(int iStart, string strInsert)

@@ -18,7 +18,6 @@
 */
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -35,20 +34,24 @@ namespace TrlUtil.Native
 
 		internal const int UISF_HIDEACCEL = 0x2;
 
+#if DEBUG
 		internal enum ProcessDpiAwareness : uint
 		{
 			Unaware = 0,
 			SystemAware = 1,
 			PerMonitorAware = 2
 		}
+#endif
 
 		[DllImport("User32.dll")]
 		internal static extern IntPtr SendMessage(IntPtr hWnd, int nMsg,
 			IntPtr wParam, IntPtr lParam);
 
+#if DEBUG
 		[DllImport("ShCore.dll")]
-		internal static extern int SetProcessDpiAwareness(
-			[MarshalAs(UnmanagedType.U4)] ProcessDpiAwareness a);
+		internal static extern int GetProcessDpiAwareness(IntPtr hProcess,
+			ref ProcessDpiAwareness a);
+#endif
 
 		internal static int MakeLong(int wLow, int wHigh)
 		{

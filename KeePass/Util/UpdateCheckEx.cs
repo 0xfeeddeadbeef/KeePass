@@ -434,6 +434,10 @@ namespace KeePass.Util
 			}
 			if(!bFooterFound) { Debug.Assert(false); return null; }
 
+			// Signing the version information file is optional, but if the
+			// author has specified a public key, the file must have a valid
+			// signature in order to be accepted;
+			// https://keepass.info/help/v2_dev/plg_index.html#upd
 			if(sbToVerify != null)
 			{
 				if(!VerifySignature(sbToVerify.ToString(), strLdSig, strSigKey))

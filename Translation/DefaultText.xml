@@ -235,6 +235,9 @@
 		<Data Name="AutoTypeSequenceInvalid">
 			<Value>The specified auto-type sequence is invalid.</Value>
 		</Data>
+		<Data Name="AutoTypeSequences">
+			<Value>Auto-Type Sequences</Value>
+		</Data>
 		<Data Name="AutoTypeUnknownPlaceholder">
 			<Value>The following auto-type placeholder or special key code is unknown/unsupported:</Value>
 		</Data>
@@ -350,7 +353,7 @@
 			<Value>Clear clipboard when closing KeePass</Value>
 		</Data>
 		<Data Name="ClipboardClearTime">
-			<Value>&amp;Clipboard auto-clear time (seconds; main entry list)</Value>
+			<Value>&amp;Clear clipboard automatically (seconds; main entry list)</Value>
 		</Data>
 		<Data Name="ClipboardDataCopied">
 			<Value>Data copied to clipboard.</Value>
@@ -922,6 +925,9 @@
 		<Data Name="Event">
 			<Value>Event</Value>
 		</Data>
+		<Data Name="Examples">
+			<Value>Examples</Value>
+		</Data>
 		<Data Name="ExecuteCmdLineUrl">
 			<Value>Execute command line / URL</Value>
 		</Data>
@@ -1236,6 +1242,9 @@
 		</Data>
 		<Data Name="GroupsSkipped1">
 			<Value>1 group skipped</Value>
+		</Data>
+		<Data Name="Help">
+			<Value>Help</Value>
 		</Data>
 		<Data Name="HelpPlh">
 			<Value>Help: {PARAM} placeholder</Value>
@@ -1599,6 +1608,9 @@
 		</Data>
 		<Data Name="LockWorkspace">
 			<Value>Lock workspace</Value>
+		</Data>
+		<Data Name="LoginTypes">
+			<Value>single-step login, two-step login, ...</Value>
 		</Data>
 		<Data Name="MacAddress">
 			<Value>MAC Address</Value>

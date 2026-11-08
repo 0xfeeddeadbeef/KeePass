@@ -384,21 +384,21 @@ namespace KeePassLib.Utility
 			string strNew)
 		{
 			if(strString == null) { Debug.Assert(false); return string.Empty; }
-			if(strFind == null) { Debug.Assert(false); return strString; }
-			if(strNew == null) { Debug.Assert(false); return strString; }
+			if(string.IsNullOrEmpty(strFind)) { Debug.Assert(false); return strString; }
+			if(strNew == null) { Debug.Assert(false); strNew = string.Empty; }
 
 			string str = strString;
 
-			int nPos = 0;
-			while(nPos < str.Length)
+			int i = 0;
+			while(i < str.Length)
 			{
-				nPos = str.IndexOf(strFind, nPos, StrUtil.CaseIgnoreCmp);
-				if(nPos < 0) break;
+				i = str.IndexOf(strFind, i, StrUtil.CaseIgnoreCmp);
+				if(i < 0) break;
 
-				str = str.Remove(nPos, strFind.Length);
-				str = str.Insert(nPos, strNew);
+				str = str.Remove(i, strFind.Length);
+				str = str.Insert(i, strNew);
 
-				nPos += strNew.Length;
+				i += strNew.Length;
 			}
 
 			return str;
@@ -2160,16 +2160,14 @@ namespace KeePassLib.Utility
 			return TrimDots(RemoveAccelerator(strCommand), true);
 		}
 
-		internal static bool Equals(char[] vA, char[] vB, bool bIgnoreNewLineEnc)
+		internal static bool EqualsNLNormalized(char[] vA, char[] vB)
 		{
-			if(!bIgnoreNewLineEnc) return MemUtil.ArrayHelperExOfChar.Equals(vA, vB);
 			if(object.ReferenceEquals(vA, vB)) return true;
 			if((vA == null) || (vB == null)) return false;
 
-			int cA = vA.Length, cB = vB.Length;
-			int iA = 0, iB = 0;
+			int iB = 0, cA = vA.Length, cB = vB.Length;
 
-			while(iA < cA)
+			for(int iA = 0; iA < cA; ++iA, ++iB)
 			{
 				if(iB >= cB) return false;
 
@@ -2177,22 +2175,27 @@ namespace KeePassLib.Utility
 
 				if(chA == '\r')
 				{
-					if(((iA + 1) < cA) && (vA[iA + 1] == '\n')) ++iA;
 					chA = '\n';
+					if(((iA + 1) < cA) && (vA[iA + 1] == '\n')) ++iA;
 				}
 				if(chB == '\r')
 				{
-					if(((iB + 1) < cB) && (vB[iB + 1] == '\n')) ++iB;
 					chB = '\n';
+					if(((iB + 1) < cB) && (vB[iB + 1] == '\n')) ++iB;
 				}
 
 				if(chA != chB) return false;
-
-				++iA;
-				++iB;
 			}
 
-			return (iB == cB);
+			return (iB >= cB);
+		}
+
+		internal static bool EqualsNLNormalized(string strA, string strB)
+		{
+			if(object.ReferenceEquals(strA, strB)) return true;
+			if((strA == null) || (strB == null)) return false;
+
+			return EqualsNLNormalized(strA.ToCharArray(), strB.ToCharArray());
 		}
 
 		internal static byte[] GetBytesSZ(string str, Encoding enc)

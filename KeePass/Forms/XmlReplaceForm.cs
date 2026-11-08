@@ -95,7 +95,12 @@ namespace KeePass.Forms
 
 		private void EnableControlsEx()
 		{
-			m_pnlReplace.Enabled = m_rbReplace.Checked;
+			bool bReplace = m_rbReplace.Checked;
+
+			m_pnlReplace.Enabled = bReplace;
+
+			m_btnOK.Enabled = ((m_tbSelNodes.TextLength != 0) && (!bReplace ||
+				(m_tbFind.TextLength != 0)));
 		}
 
 		private void OnRemoveCheckedChanged(object sender, EventArgs e)
@@ -127,7 +132,7 @@ namespace KeePass.Forms
 				if(m_cbCase.Checked) f |= XmlReplaceFlags.CaseSensitive;
 				if(m_cbRegex.Checked) f |= XmlReplaceFlags.Regex;
 
-				opt.FindText = m_tbMatch.Text;
+				opt.FindText = m_tbFind.Text;
 				opt.ReplaceText = m_tbReplace.Text;
 
 				opt.Flags = f;
@@ -149,6 +154,16 @@ namespace KeePass.Forms
 		private void OnBtnHelp(object sender, EventArgs e)
 		{
 			AppHelp.ShowHelp(AppDefs.HelpTopics.XmlReplace, null);
+		}
+
+		private void OnSelNodesTextChanged(object sender, EventArgs e)
+		{
+			EnableControlsEx();
+		}
+
+		private void OnFindTextChanged(object sender, EventArgs e)
+		{
+			EnableControlsEx();
 		}
 	}
 }

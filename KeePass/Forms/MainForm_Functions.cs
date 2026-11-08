@@ -113,11 +113,9 @@ namespace KeePass.Forms
 		private readonly PluginManager m_pluginManager = new PluginManager();
 
 		private readonly CriticalSectionEx m_csLockTimer = new CriticalSectionEx();
-		private int m_nLockTimerMax = 0;
-		// private volatile int m_nLockTimerCur = 0;
-		private long m_lLockAtTicks = long.MaxValue;
+		private DateTime m_dtLock = DateTime.MaxValue;
+		private DateTime m_dtLockGlobal = DateTime.MaxValue;
 		private uint m_uLastInputTime = uint.MaxValue;
-		private long m_lLockAtGlobalTicks = long.MaxValue;
 
 		private ComboBox m_cmbQuickFind = null;
 		private uint m_uBlockQuickFind = 0;
@@ -127,8 +125,7 @@ namespace KeePass.Forms
 		private ToolStripSeparator m_tsSepCustomToolBar = null;
 		private readonly List<ToolStripButton> m_lCustomToolBarButtons = new List<ToolStripButton>();
 
-		private int m_nClipClearMax = 0;
-		private int m_nClipClearCur = -1;
+		private DateTime m_dtClearClipboard = DateTime.MaxValue;
 
 		private readonly string m_strNeverExpires = KPRes.NeverExpires;
 		private readonly string m_strStatusReady = KPRes.Ready;
@@ -352,7 +349,7 @@ namespace KeePass.Forms
 			MonoWorkarounds.Release(this);
 			GlobalWindowManager.CustomizeFormHandleCreated(this, false, false);
 
-			m_nClipClearCur = -1;
+			m_dtClearClipboard = DateTime.MaxValue;
 			if(Program.Config.Security.ClipboardClearOnExit)
 				ClipboardUtil.ClearIfOwner();
 
@@ -1091,54 +1088,45 @@ namespace KeePass.Forms
 			m_statusPartInfo.Text = (strStatusText ?? m_strStatusReady);
 		}
 
-		private void UpdateClipboardStatus()
+		private void UpdateClipboardStatus(DateTime dtNow)
 		{
-			// Fix values in case the maximum time has been changed in the
-			// options while the countdown is running
-			if((m_nClipClearMax < 0) && (m_nClipClearCur > 0))
-				m_nClipClearCur = 0;
-			else if((m_nClipClearCur > m_nClipClearMax) && (m_nClipClearMax >= 0))
-				m_nClipClearCur = m_nClipClearMax;
-
-			if((m_nClipClearCur > 0) && (m_nClipClearMax > 0))
+			DateTime dtClear = m_dtClearClipboard;
+			if((dtNow < dtClear) && (dtClear != DateTime.MaxValue))
 			{
-				m_statusClipboard.Value = ((m_nClipClearCur * 100) / m_nClipClearMax);
+				double dSec = Math.Ceiling((dtClear - dtNow).TotalSeconds);
+				if(dSec < 1) { Debug.Assert(false); dSec = 1; }
+
+				double dSecMax = Program.Config.Security.ClipboardClearAfterSeconds;
+				if(dSecMax < dSec) { Debug.Assert(false); dSecMax = dSec; }
+
+				m_statusClipboard.Value = (int)(100 * dSec / dSecMax);
 
 				string str = KPRes.ClipboardClearInSeconds2.Replace("{PARAM}",
-					m_nClipClearCur.ToString());
+					((ulong)dSec).ToString());
 				UIUtil.SetToolTip(m_statusClipboard, str, true);
 			}
-			else if(m_nClipClearCur == 0)
+			else
 			{
 				AccessibilityEx.SetRole(m_statusClipboard.Control, AccessibleRole.Default);
 				m_statusClipboard.Visible = false;
 			}
 		}
 
-		/// <summary>
-		/// Start the clipboard countdown (set the current tick count to the
-		/// maximum value and decrease it each second -- at 0 the clipboard
-		/// is cleared automatically). This function is asynchronous.
-		/// </summary>
 		public void StartClipboardCountdown()
 		{
-			if(m_nClipClearMax >= 0)
-			{
-				m_nClipClearCur = m_nClipClearMax;
+			int cSec = Program.Config.Security.ClipboardClearAfterSeconds;
+			if(cSec < 0) return;
+			if(cSec == 0) { ClipboardUtil.ClearIfOwner(); return; }
 
-				m_statusClipboard.Visible = true;
-				UpdateClipboardStatus();
-				AccessibilityEx.SetRole(m_statusClipboard.Control, AccessibleRole.Alert);
+			DateTime dtNow = DateTime.UtcNow;
+			m_dtClearClipboard = dtNow.AddSeconds(cSec);
 
-				string strText = KPRes.ClipboardDataCopied + " " +
-					KPRes.ClipboardClearInSeconds2.Replace("{PARAM}",
-					m_nClipClearMax.ToString()) + ".";
-				SetStatusEx(strText);
+			m_statusClipboard.Visible = true;
+			UpdateClipboardStatus(dtNow);
+			AccessibilityEx.SetRole(m_statusClipboard.Control, AccessibleRole.Alert);
 
-				// if(m_ntfTray.Visible)
-				//	m_ntfTray.ShowBalloonTip(0, KPRes.ClipboardAutoClear,
-				//		strText, ToolTipIcon.Info);
-			}
+			SetStatusEx(KPRes.ClipboardDataCopied + " " +
+				KPRes.ClipboardClearInSeconds2.Replace("{PARAM}", cSec.ToString()) + ".");
 		}
 
 		/// <summary>
@@ -1388,7 +1376,8 @@ namespace KeePass.Forms
 				{
 					string strSub = GetEntryFieldEx(pe, iColumn, true, out bAsync);
 
-					if(iColumn < nSubItems) lvi.SubItems[iColumn].Text = strSub;
+					if(iColumn < nSubItems)
+						UIUtil.SetText(lvi.SubItems[iColumn], strSub);
 					else lvi.SubItems.Add(strSub);
 
 					if(bAsync)
@@ -1824,8 +1813,7 @@ namespace KeePass.Forms
 			Font fontUI = (UISystemFonts.ListFont ?? m_lvEntries.Font);
 			// string strFontFace = (af.OverrideUIDefault ? af.Family : fontUI.Name);
 			// float fFontSize = (af.OverrideUIDefault ? af.ToFont().SizeInPoints : fontUI.SizeInPoints);
-			if(af.OverrideUIDefault) rb.DefaultFont = af.ToFont();
-			else rb.DefaultFont = fontUI;
+			rb.DefaultFont = (af.OverrideUIDefault ? af.ToFont() : fontUI);
 
 			bool bHorz = (m_splitHorizontal.Orientation == Orientation.Horizontal);
 			string strItemSep = (bHorz ? ". " : Environment.NewLine);
@@ -2933,15 +2921,8 @@ namespace KeePass.Forms
 		/// </summary>
 		public void NotifyUserActivity()
 		{
-			// m_nLockTimerCur = m_nLockTimerMax;
-
-			if(m_nLockTimerMax == 0) m_lLockAtTicks = long.MaxValue;
-			else
-			{
-				DateTime utcLockAt = DateTime.UtcNow;
-				utcLockAt = utcLockAt.AddSeconds((double)m_nLockTimerMax);
-				m_lLockAtTicks = utcLockAt.Ticks;
-			}
+			uint u = Program.Config.Security.WorkspaceLocking.LockAfterTime;
+			m_dtLock = ((u == 0) ? DateTime.MaxValue : DateTime.UtcNow.AddSeconds(u));
 
 			Program.TriggerSystem.NotifyUserActivity();
 
@@ -2949,20 +2930,16 @@ namespace KeePass.Forms
 				this.UserActivityPost(null, EventArgs.Empty);
 		}
 
-		private void UpdateGlobalLockTimeout(DateTime utcNow)
+		private void UpdateGlobalLockTimeout(DateTime dtNow)
 		{
-			uint uLockGlobal = Program.Config.Security.WorkspaceLocking.LockAfterGlobalTime;
-			if(uLockGlobal == 0) { m_lLockAtGlobalTicks = long.MaxValue; return; }
+			uint u = Program.Config.Security.WorkspaceLocking.LockAfterGlobalTime;
+			if(u == 0) { m_dtLockGlobal = DateTime.MaxValue; return; }
 
-			uint? uLastInputTime = NativeMethods.GetLastInputTime();
-			if(!uLastInputTime.HasValue) return;
-
-			if(uLastInputTime.Value != m_uLastInputTime)
+			uint? ou = NativeMethods.GetLastInputTime();
+			if(ou.HasValue && (ou.Value != m_uLastInputTime))
 			{
-				DateTime utcLockAt = utcNow.AddSeconds((double)uLockGlobal);
-				m_lLockAtGlobalTicks = utcLockAt.Ticks;
-
-				m_uLastInputTime = uLastInputTime.Value;
+				m_uLastInputTime = ou.Value;
+				m_dtLockGlobal = dtNow.AddSeconds(u);
 			}
 		}
 
@@ -3503,7 +3480,7 @@ namespace KeePass.Forms
 
 			UIUtil.AssignShortcut(m_menuEntryAdd, Keys.Control | Keys.I);
 			UIUtil.AssignShortcut(m_menuEntryEdit, Keys.Return, null, true);
-			UIUtil.AssignShortcut(m_menuEntryDuplicate, Keys.Control | Keys.K);
+			UIUtil.AssignShortcut(m_menuEntryDuplicate, Keys.Control | Keys.D);
 			UIUtil.AssignShortcut(m_menuEntryDelete, Keys.Delete, null, true);
 
 			UIUtil.AssignShortcut(m_menuEntrySelectAll, Keys.Control | Keys.A,
@@ -3518,10 +3495,10 @@ namespace KeePass.Forms
 			UIUtil.AssignShortcut(m_menuEntryMoveToBottom, (bMoveMono ?
 				Keys.F8 : Keys.End) | kMoveMod, null, true);
 
-			UIUtil.AssignShortcut(m_menuEntryCompare2, Keys.Control | Keys.D, null, true);
-			UIUtil.AssignShortcut(m_menuEntryCompareMark, Keys.Control | Keys.Shift | Keys.D,
+			UIUtil.AssignShortcut(m_menuEntryCompare2, Keys.Control | Keys.K, null, true);
+			UIUtil.AssignShortcut(m_menuEntryCompareMark, Keys.Control | Keys.Shift | Keys.K,
 				null, true);
-			UIUtil.AssignShortcut(m_menuEntryCompare1, Keys.Control | Keys.D, null, true);
+			UIUtil.AssignShortcut(m_menuEntryCompare1, Keys.Control | Keys.K, null, true);
 
 			UIUtil.AssignShortcut(m_menuEntryClipCopy, Keys.Control | Keys.Shift | Keys.C,
 				null, true);
@@ -4127,22 +4104,22 @@ namespace KeePass.Forms
 			pd.Close();
 			if(!bLocking) m_docMgr.CloseDatabase(pd);
 
-			if(bIsActive)
+			if((Program.Config.UI.UIFlags & (ulong)AceUIFlags.DisableSearchClear) == 0)
 			{
-				if((Program.Config.UI.UIFlags & (ulong)AceUIFlags.NoQuickSearchClear) == 0)
-				{
-					++m_uBlockQuickFind;
-					m_tbQuickFind.Items.Clear();
-					m_tbQuickFind.Text = string.Empty;
-					--m_uBlockQuickFind;
-				}
+				++m_uBlockQuickFind;
+				m_tbQuickFind.Items.Clear();
+				m_tbQuickFind.Text = string.Empty;
+				--m_uBlockQuickFind;
 
-				if(!bLocking)
-				{
-					m_docMgr.ActiveDatabase.UINeedsIconUpdate = true;
-					ResetDefaultFocus(null);
-				}
+				Program.Config.RemoveSensitiveSearchInfo();
 			}
+
+			if(bIsActive && !bLocking)
+			{
+				m_docMgr.ActiveDatabase.UINeedsIconUpdate = true;
+				ResetDefaultFocus(null);
+			}
+
 			if(bUpdateUI)
 			{
 				UpdateUI(true, null, true, null, true, null, false);
@@ -4935,7 +4912,7 @@ namespace KeePass.Forms
 							else OnEntryCopyPassword(null, e);
 						}
 						break;
-					case Keys.D:
+					case Keys.K:
 						if(bDown)
 						{
 							if(bShift) OnEntryCompareMark(null, e);

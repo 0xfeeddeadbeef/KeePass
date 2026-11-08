@@ -54,20 +54,20 @@ namespace KeePassLib
 		/// 2.00 = 0x02000000, 2.01 = 0x02000100, ..., 2.18 = 0x02010800.
 		/// As of 2.19, the version is encoded component-wise per byte,
 		/// e.g. 2.19 = 0x02130000.
-		/// It is highly recommended to use <c>FileVersion64</c> instead.
+		/// It is recommended to use <c>FileVersion64</c> instead.
 		/// </summary>
-		public static readonly uint Version32 = 0x023D0100;
+		public static readonly uint Version32 = 0x023E0000;
 
 		/// <summary>
 		/// Version, encoded as 64-bit unsigned integer
 		/// (component-wise, 16 bits per component).
 		/// </summary>
-		public static readonly ulong FileVersion64 = 0x0002003D00010000;
+		public static readonly ulong FileVersion64 = 0x0002003E00000000;
 
 		/// <summary>
 		/// Version, encoded as string.
 		/// </summary>
-		public static readonly string VersionString = "2.61.1";
+		public static readonly string VersionString = "2.62";
 
 		public static readonly string Copyright = "Copyright © 2003-2026 Dominik Reichl";
 

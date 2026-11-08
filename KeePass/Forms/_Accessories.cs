@@ -23,6 +23,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Windows.Forms;
 
+using KeePass.UI;
 using KeePass.Util;
 
 using KeePassLib;
@@ -192,7 +193,7 @@ namespace KeePass.Forms
 					str = EntryUtil.GetHiddenString(si.TextPS, true);
 				else str = si.Text;
 
-				m_lvi.SubItems[i].Text = str;
+				UIUtil.SetText(m_lvi.SubItems[i], str);
 			}
 		}
 	}

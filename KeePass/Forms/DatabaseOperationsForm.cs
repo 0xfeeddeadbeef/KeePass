@@ -70,17 +70,16 @@ namespace KeePass.Forms
 
 			m_numHistoryDays.Value = m_pwDatabase.MaintenanceHistoryDays;
 
-			m_lvCustomData.ItemDeleteButton = m_btnCDDel;
-
 			m_sdCustomData = m_pwDatabase.CustomData.CloneDeep();
 			UIUtil.StrDictListInit(m_lvCustomData);
 			UIUtil.StrDictListUpdate(m_lvCustomData, m_sdCustomData, false);
+			m_lvCustomData.ItemDeleteButton = m_btnCDDel;
 
 			m_pbStatus.Visible = false;
 			EnableControlsEx();
 		}
 
-		private void OnBtnClose(object sender, EventArgs e)
+		private void OnFormClosing(object sender, FormClosingEventArgs e)
 		{
 			m_pwDatabase.MaintenanceHistoryDays = (uint)m_numHistoryDays.Value;
 
@@ -90,6 +89,11 @@ namespace KeePass.Forms
 				m_bModified = true;
 			}
 			else { Debug.Assert(m_sdCustomData.Equals(m_pwDatabase.CustomData)); }
+		}
+
+		private void OnFormClosed(object sender, FormClosedEventArgs e)
+		{
+			GlobalWindowManager.RemoveWindow(this);
 		}
 
 		private void EnableControlsEx()
@@ -150,11 +154,6 @@ namespace KeePass.Forms
 			m_pwDatabase.RootGroup.TraverseTree(TraversalMethod.PreOrder, null, eh);
 
 			EnableStatusMsgEx(false); // Database is set modified by parent
-		}
-
-		private void OnFormClosed(object sender, FormClosedEventArgs e)
-		{
-			GlobalWindowManager.RemoveWindow(this);
 		}
 
 		private void OnBtnRemoveDelObjInfo(object sender, EventArgs e)

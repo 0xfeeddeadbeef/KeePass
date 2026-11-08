@@ -324,10 +324,14 @@ namespace KeePassLib.Serialization
 			byte btFieldID = brSource.ReadByte();
 
 			int cbSize;
-			Debug.Assert(m_uFileVersion > 0);
+			Debug.Assert(m_uFileVersion != 0);
 			if(m_uFileVersion < FileVersion32_4)
-				cbSize = (int)MemUtil.BytesToUInt16(brSource.ReadBytes(2));
+				cbSize = MemUtil.BytesToUInt16(brSource.ReadBytes(2));
 			else cbSize = MemUtil.BytesToInt32(brSource.ReadBytes(4));
+			// The maximum is about 2 GB, and allocating 2 GB of RAM
+			// (temporarily) is no problem on a desktop PC nowadays;
+			// https://keepass.info/help/kb/kdbx.html#header
+			// https://keepass.info/help/kb/sec_issues.html#hdrfmem
 			if(cbSize < 0) throw new FormatException(KLRes.FileCorrupted);
 
 			byte[] pbData = MemUtil.EmptyByteArray;

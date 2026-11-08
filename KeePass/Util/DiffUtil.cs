@@ -411,14 +411,15 @@ namespace KeePass.Util
 						peA.LastAccessTime, true, peB.LastAccessTime);
 			}
 
-			const PwCompareOptions coAll = (PwCompareOptions.NullEmptyEquivStd |
+			// Cf. PwDatabase.MergeIn
+			const PwCompareOptions pcoAll = (PwCompareOptions.NullEmptyEquivStd |
 				PwCompareOptions.IgnoreParentGroup | PwCompareOptions.IgnoreLastAccess |
-				PwCompareOptions.IgnoreHistory); // Cf. PwDatabase.MergeIn
+				PwCompareOptions.IgnoreHistory | PwCompareOptions.NormalizeNewLines);
 			const MemProtCmpMode mpcmAll = MemProtCmpMode.CustomOnly;
 			bool bNamesEmpty = ((ctx.OutNames != null) && (ctx.OutNames.Length == 0));
 			if(bNamesEmpty || bOutLvo)
 			{
-				bEqual = peA.EqualsEntry(peB, coAll, mpcmAll);
+				bEqual = peA.EqualsEntry(peB, pcoAll, mpcmAll);
 				if(bOutLvo) ctx.OutLvo.Add(new ListViewGroup(KPRes.All));
 				strA = MultipleValuesEx.CueString;
 				Report(ctx, DfxIcon.Binary, ((bNamesEmpty && !bOutLvo) ?
@@ -518,8 +519,8 @@ namespace KeePass.Util
 				{
 					case DfxChange.None:
 						// Debug.Assert(strValueA == strValueB);
-						Debug.Assert(StrUtil.NormalizeNewLines((strValueA ?? "#%$&!@"), false) ==
-							StrUtil.NormalizeNewLines((strValueB ?? "#%$&!@"), false));
+						Debug.Assert(StrUtil.EqualsNLNormalized((strValueA ?? "#%$&!@"),
+							(strValueB ?? "#%$&!@")));
 						strStatus = "=";
 						oclrA = null;
 						oclrB = null;
@@ -620,32 +621,8 @@ namespace KeePass.Util
 			if(!bA) c = (bB ? DfxChange.Add : DfxChange.None);
 			else if(!bB) c = DfxChange.Remove;
 			else
-			{
-				// c = (psValueA.Equals(psValueB, bCheckProt) ? DfxChange.None : DfxChange.Edit);
-
-				if(bCheckProt && (psValueA.IsProtected != psValueB.IsProtected))
-					c = DfxChange.Edit;
-				else
-				{
-					char[] vA = null, vB = null;
-					try
-					{
-						vA = psValueA.ReadChars();
-						vB = psValueB.ReadChars();
-						c = (StrUtil.Equals(vA, vB, true) ? DfxChange.None : DfxChange.Edit);
-					}
-					catch(Exception)
-					{
-						Debug.Assert(false);
-						c = (psValueA.Equals(psValueB, false) ? DfxChange.None : DfxChange.Edit);
-					}
-					finally
-					{
-						if(psValueA.IsProtected) MemUtil.ZeroArray<char>(vA);
-						if(psValueB.IsProtected) MemUtil.ZeroArray<char>(vB);
-					}
-				}
-			}
+				c = (psValueA.Equals(psValueB, bCheckProt, PwCompareOptions.NormalizeNewLines) ?
+					DfxChange.None : DfxChange.Edit);
 
 			Report(ctx, ic, strName, strA, psValueA, strB, psValueB, c);
 

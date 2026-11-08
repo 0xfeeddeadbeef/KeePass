@@ -45,7 +45,7 @@ namespace KeePass.Util
 		~CriticalSectionEx()
 		{
 			// The object should be unlocked when the lock is disposed
-			Debug.Assert(Interlocked.CompareExchange(ref m_iLock, 0, 2) == 0);
+			Debug.Assert(Interlocked.CompareExchange(ref m_iLock, 0, 0) == 0);
 		}
 #endif
 

@@ -459,6 +459,10 @@ namespace KeePass.Forms
 			sb.AppendLine("\tempty-cells: show;");
 			sb.AppendLine("}");
 
+			sb.AppendLine("tr {");
+			sb.AppendLine("\tbreak-inside: avoid;");
+			sb.AppendLine("}");
+
 			sb.AppendLine("th, td {");
 			sb.AppendLine("\ttext-align: " + (p.Rtl ? "right;" : "left;"));
 			sb.AppendLine("\tvertical-align: top;");

@@ -590,7 +590,7 @@ namespace KeePass.DataExchange
 				if(bOnlyIfNotDup)
 				{
 					ProtectedString psValue = new ProtectedString(false, strValue);
-					bAppend = !psEx.Equals(psValue, false);
+					bAppend = !psEx.Equals(psValue, false, PwCompareOptions.NormalizeNewLines);
 				}
 
 				if(bAppend)
@@ -659,11 +659,11 @@ namespace KeePass.DataExchange
 		{
 			if(pe1.ParentGroup == null) return false;
 			if(pe2.ParentGroup == null) return false;
-			if(pe1.ParentGroup.Name != pe2.ParentGroup.Name)
-				return false;
+			if(pe1.ParentGroup.Name != pe2.ParentGroup.Name) return false;
 
 			return pe1.Strings.EqualsDictionary(pe2.Strings,
-				PwCompareOptions.NullEmptyEquivStd, MemProtCmpMode.None);
+				(PwCompareOptions.NullEmptyEquivStd | PwCompareOptions.NormalizeNewLines),
+				MemProtCmpMode.None);
 		}
 
 		internal static string GuiSendRetrieve(string strSendPrefix)

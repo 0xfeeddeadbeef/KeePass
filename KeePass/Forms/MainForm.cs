@@ -183,10 +183,6 @@ namespace KeePass.Forms
 				this.OnSystemTrayMouseDown);
 
 			m_ctxTrayTray.Font = FontUtil.CreateFont(m_ctxTrayTray.Font, FontStyle.Bold);
-
-			m_nLockTimerMax = (int)Program.Config.Security.WorkspaceLocking.LockAfterTime;
-			m_nClipClearMax = Program.Config.Security.ClipboardClearAfterSeconds;
-
 			m_ctxEntryPreviewContextMenu.Attach(m_richEntryView, this);
 
 			m_dynStringsMenu = new DynamicMenu(m_menuEntryOtherData.DropDownItems);
@@ -456,7 +452,7 @@ namespace KeePass.Forms
 			m_statusPartInfo.AutoToolTip = true;
 			m_statusPartProgress.Visible = false;
 			m_statusClipboard.Visible = false;
-			UpdateClipboardStatus();
+			UpdateClipboardStatus(DateTime.UtcNow);
 
 			ToolStripItem[] vSbItems = new ToolStripItem[] {
 				m_statusPartSelected, m_statusPartProgress, m_statusClipboard };
@@ -1179,8 +1175,13 @@ namespace KeePass.Forms
 
 			if(UIUtil.ShowDialogAndDestroy(dlg) == DialogResult.OK)
 			{
-				m_nLockTimerMax = (int)Program.Config.Security.WorkspaceLocking.LockAfterTime;
-				m_nClipClearMax = Program.Config.Security.ClipboardClearAfterSeconds;
+				DateTime dtA = m_dtClearClipboard;
+				int cSec = Program.Config.Security.ClipboardClearAfterSeconds;
+				if((dtA != DateTime.MaxValue) && (cSec >= 0))
+				{
+					DateTime dtN = DateTime.UtcNow.AddSeconds(cSec);
+					if(dtN < dtA) m_dtClearClipboard = dtN;
+				}
 
 				m_tvGroups.ApplyOptions();
 				// m_lvEntries.GridLines = Program.Config.MainWindow.ShowGridLines;
@@ -1542,29 +1543,26 @@ namespace KeePass.Forms
 			// Prevent UI automations during auto-type
 			if(SendInputEx.IsSending) return;
 
-			if(m_nClipClearCur > 0)
-			{
-				--m_nClipClearCur;
-				UpdateClipboardStatus();
-			}
-			else if(m_nClipClearCur == 0)
-			{
-				m_nClipClearCur = -1;
-				UpdateClipboardStatus();
-
-				ClipboardUtil.ClearIfOwner();
-				UpdateUIState(false);
-			}
-
 			if(m_bUpdateUIStateOnce)
 				UpdateUIState(false); // Resets m_bUpdateUIStateOnce
 
-			DateTime utcNow = DateTime.UtcNow; // Fast; DateTime internally uses UTC
+			DateTime dtNow = DateTime.UtcNow; // Fast; DateTime internally uses UTC
+
+			if(m_dtClearClipboard != DateTime.MaxValue)
+			{
+				UpdateClipboardStatus(dtNow);
+
+				if((dtNow >= m_dtClearClipboard) && ClipboardUtil.ClearIfOwnerEx())
+				{
+					m_dtClearClipboard = DateTime.MaxValue;
+					SetStatusEx(null);
+				}
+			}
 
 			// Update the global inactivity timeout in every main timer tick,
 			// *before* checking the timeout (otherwise KeePass could be locked
 			// even though the user did something within the last second)
-			UpdateGlobalLockTimeout(utcNow);
+			UpdateGlobalLockTimeout(dtNow);
 
 			if(m_csLockTimer.TryEnter())
 			{
@@ -1575,8 +1573,7 @@ namespace KeePass.Forms
 					NotifyUserActivity(); // Unclosable dialog = activity
 				else if(IsAtLeastOneFileOpen())
 				{
-					long lCurTicks = utcNow.Ticks;
-					if((lCurTicks >= m_lLockAtTicks) || (lCurTicks >= m_lLockAtGlobalTicks))
+					if((dtNow >= m_dtLock) || (dtNow >= m_dtLockGlobal))
 					{
 						bool bBlock = MonoWorkarounds.IsRequired(1527);
 						if(bBlock) BlockMainTimer(true);
@@ -2686,8 +2683,8 @@ namespace KeePass.Forms
 			dlg.InitEx(d, pd);
 
 			if((UIUtil.ShowDialogAndDestroy(dlg) == DialogResult.OK) &&
-				!d.EqualsDictionary(pe.Strings, PwCompareOptions.NullEmptyEquivStd,
-				MemProtCmpMode.CustomOnly))
+				!d.EqualsDictionary(pe.Strings, (PwCompareOptions.NullEmptyEquivStd |
+				PwCompareOptions.NormalizeNewLines), MemProtCmpMode.CustomOnly))
 			{
 				pe.CreateBackup(pd);
 				pe.Strings = d;

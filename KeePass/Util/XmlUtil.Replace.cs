@@ -261,9 +261,10 @@ namespace KeePass.Util
 			PwGroup pgRootNew = pd.RootGroup;
 			if(pgRootNew == null) { Debug.Assert(false); return; }
 
-			const PwCompareOptions cmpOpt = (PwCompareOptions.IgnoreParentGroup |
-				PwCompareOptions.IgnoreHistory | PwCompareOptions.NullEmptyEquivStd);
-			const MemProtCmpMode cmpMem = MemProtCmpMode.CustomOnly;
+			const PwCompareOptions pco = (PwCompareOptions.NullEmptyEquivStd |
+				PwCompareOptions.IgnoreParentGroup | PwCompareOptions.IgnoreHistory |
+				PwCompareOptions.NormalizeNewLines);
+			const MemProtCmpMode mpcm = MemProtCmpMode.CustomOnly;
 			DateTime dtNow = DateTime.UtcNow;
 
 			GroupHandler ghOrg = delegate(PwGroup pg)
@@ -275,8 +276,7 @@ namespace KeePass.Util
 					return true;
 				}
 
-				if(!pgNew.EqualsGroup(pg, (cmpOpt | PwCompareOptions.PropertiesOnly),
-					cmpMem))
+				if(!pgNew.EqualsGroup(pg, (pco | PwCompareOptions.PropertiesOnly), mpcm))
 					pgNew.Touch(true, false);
 
 				PwGroup pgParentA = pg.ParentGroup;
@@ -306,7 +306,7 @@ namespace KeePass.Util
 				foreach(PwEntry peHistNew in peNew.History)
 					peHistNew.ParentGroup = peNew.ParentGroup;
 
-				if(!peNew.EqualsEntry(pe, cmpOpt, cmpMem))
+				if(!peNew.EqualsEntry(pe, pco, mpcm))
 					peNew.Touch(true, false);
 
 				PwGroup pgParentA = pe.ParentGroup;

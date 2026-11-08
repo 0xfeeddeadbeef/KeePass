@@ -184,9 +184,8 @@ namespace KeePass.Util.MultipleValues
 						{
 							bool bProtM = psM.IsProtected;
 
-							if(!psM.Equals(kvp.Value, false))
-								m_peM.Strings.Set(kvp.Key, ((bProtM && bProt) ?
-									psCueEx : psCue));
+							if(!psM.Equals(kvp.Value, false, PwCompareOptions.NormalizeNewLines))
+								m_peM.Strings.Set(kvp.Key, ((bProtM && bProt) ? psCueEx : psCue));
 
 							if(bProtM != bProt)
 							{
@@ -247,8 +246,8 @@ namespace KeePass.Util.MultipleValues
 					}
 					else
 					{
-						if((ps == null) || !ps.Equals(kvpM.Value, false) ||
-							(ps.IsProtected != bProt))
+						if((ps == null) || (ps.IsProtected != bProt) || !ps.Equals(
+							kvpM.Value, false, PwCompareOptions.NormalizeNewLines))
 						{
 							PrepareMod(i);
 							pe.Strings.Set(kvpM.Key, kvpM.Value.WithProtection(bProt));

@@ -28,20 +28,19 @@ namespace KeePass.Util
 	public sealed class ClipboardContents
 	{
 		private string m_strText = null;
-		private List<KeyValuePair<string, object>> m_vContents = null;
+		private List<KeyValuePair<string, object>> m_lContents = null;
 
-		public ClipboardContents(bool bGetFromCurrent, bool bSimpleOnly)
+		public ClipboardContents(bool bGetCurrent, bool bSimpleOnly)
 		{
-			if(bGetFromCurrent) GetData(bSimpleOnly);
+			if(bGetCurrent) GetData(bSimpleOnly);
 		}
 
 		/// <summary>
-		/// Create a backup of the current clipboard contents.
+		/// Get the current clipboard contents.
 		/// </summary>
-		/// <param name="bSimpleOnly">Create a simplified backup.
-		/// The advanced mode might crash in conjunction with
-		/// applications that use clipboard tricks like delay
-		/// rendering.</param>
+		/// <param name="bSimpleOnly">Get simple data (text) only. The
+		/// advanced mode might throw in conjunction with applications
+		/// that use clipboard tricks like delay rendering.</param>
 		public void GetData(bool bSimpleOnly)
 		{
 			try { GetDataPriv(bSimpleOnly); }
@@ -50,24 +49,22 @@ namespace KeePass.Util
 
 		private void GetDataPriv(bool bSimpleOnly)
 		{
+			m_strText = null;
+			m_lContents = null;
+
 			if(bSimpleOnly)
 			{
 				if(ClipboardUtil.ContainsText())
 					m_strText = ClipboardUtil.GetText();
 			}
-			else // Advanced backup
+			else
 			{
-				m_vContents = new List<KeyValuePair<string, object>>();
+				m_lContents = new List<KeyValuePair<string, object>>();
 
-				IDataObject idoClip = Clipboard.GetDataObject();
-				foreach(string strFormat in idoClip.GetFormats())
-				{
-					KeyValuePair<string, object> kvp =
-						new KeyValuePair<string, object>(strFormat,
-						idoClip.GetData(strFormat));
-
-					m_vContents.Add(kvp);
-				}
+				IDataObject d = Clipboard.GetDataObject();
+				foreach(string strFormat in d.GetFormats())
+					m_lContents.Add(new KeyValuePair<string, object>(strFormat,
+						d.GetData(strFormat)));
 			}
 		}
 
@@ -81,14 +78,14 @@ namespace KeePass.Util
 		{
 			if(m_strText != null)
 				ClipboardUtil.Copy(m_strText, false, false, null, null, IntPtr.Zero);
-			else if(m_vContents != null)
+			else if(m_lContents != null)
 			{
-				DataObject dObj = new DataObject();
-				foreach(KeyValuePair<string, object> kvp in m_vContents)
-					dObj.SetData(kvp.Key, kvp.Value);
+				DataObject d = new DataObject();
+				foreach(KeyValuePair<string, object> kvp in m_lContents)
+					d.SetData(kvp.Key, kvp.Value);
 
 				ClipboardUtil.Clear();
-				Clipboard.SetDataObject(dObj);
+				Clipboard.SetDataObject(d);
 			}
 		}
 	}

@@ -499,11 +499,13 @@ namespace KeePass.Native
 			ShareExclusive = 0x00000010
 		}
 
+#if DEBUG
 		internal enum ProcessDpiAwareness : uint
 		{
 			Unaware = 0,
 			SystemAware = 1,
 			PerMonitorAware = 2
 		}
+#endif
 	}
 }

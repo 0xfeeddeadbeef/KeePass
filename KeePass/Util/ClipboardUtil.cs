@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
@@ -30,7 +29,6 @@ using KeePass.Ecas;
 using KeePass.Forms;
 using KeePass.Native;
 using KeePass.UI;
-using KeePass.Util;
 using KeePass.Util.Spr;
 
 using KeePassLib;
@@ -199,8 +197,13 @@ namespace KeePass.Util
 		/// </summary>
 		public static void Clear()
 		{
+			if(!ClearEx()) { Debug.Assert(false); }
+		}
+
+		internal static bool ClearEx()
+		{
 			// Ensure that there's no infinite recursion
-			if(!g_csClearing.TryEnter()) { Debug.Assert(false); return; }
+			if(!g_csClearing.TryEnter()) { Debug.Assert(false); return false; }
 
 			// In some situations (e.g. when running in a VM, when using
 			// a clipboard extension utility, ...) the clipboard cannot
@@ -231,7 +234,6 @@ namespace KeePass.Util
 			}
 			catch(Exception) { Debug.Assert(false); }
 
-			bool bNativeSuccess = false;
 			try
 			{
 				if(!NativeLib.IsUnix()) // Windows
@@ -239,33 +241,39 @@ namespace KeePass.Util
 					if(OpenW(IntPtr.Zero, true)) // Clears the clipboard
 					{
 						CloseW();
-						bNativeSuccess = true;
+						return true;
 					}
 				}
 				else if(NativeLib.GetPlatformID() == PlatformID.MacOSX)
 				{
 					SetStringM(string.Empty);
-					bNativeSuccess = true;
+					return true;
 				}
 				else if(NativeLib.IsUnix())
 				{
 					SetStringU(string.Empty);
-					bNativeSuccess = true;
+					return true;
 				}
 			}
 			catch(Exception) { Debug.Assert(false); }
-
-			g_pbDataHash = null;
-			g_csClearing.Exit();
-
-			if(bNativeSuccess) return;
+			finally
+			{
+				g_pbDataHash = null;
+				g_csClearing.Exit();
+			}
 
 			Debug.Assert(false);
 			try { Clipboard.Clear(); } // Fallback; empty data object
-			catch(Exception) { Debug.Assert(false); }
+			catch(Exception) { Debug.Assert(false); return false; }
+			return true;
 		}
 
 		public static void ClearIfOwner()
+		{
+			if(!ClearIfOwnerEx()) { Debug.Assert(false); }
+		}
+
+		internal static bool ClearIfOwnerEx()
 		{
 			// Handle-based detection doesn't work well, because the window
 			// that stored the data may not exist anymore and thus
@@ -281,13 +289,15 @@ namespace KeePass.Util
 			}
 			catch(Exception) { Debug.Assert(false); } */
 
-			if(g_pbDataHash == null) return;
+			if(g_pbDataHash == null) return true;
 
-			byte[] pbCur = ComputeHash();
+			bool bException;
+			byte[] pbCur = ComputeHash(out bException);
+			if(bException) return false;
 			if((pbCur == null) || !MemUtil.ArraysEqual(pbCur, g_pbDataHash))
-				return;
+				return true;
 
-			Clear();
+			return ClearEx();
 		}
 
 		private static byte[] HashString(string str)
@@ -296,8 +306,7 @@ namespace KeePass.Util
 			{
 				if(string.IsNullOrEmpty(str)) return null;
 
-				byte[] pb = StrUtil.Utf8.GetBytes(str);
-				return CryptoUtil.HashSha256(pb);
+				return CryptoUtil.HashSha256(StrUtil.Utf8.GetBytes(str));
 			}
 			catch(Exception) { Debug.Assert(false); }
 
@@ -306,8 +315,16 @@ namespace KeePass.Util
 
 		public static byte[] ComputeHash()
 		{
+			bool bException;
+			return ComputeHash(out bException);
+		}
+
+		internal static byte[] ComputeHash(out bool bException)
+		{
+			bException = false;
+
 			try { return HashString(GetText()); }
-			catch(Exception) { Debug.Assert(false); }
+			catch(Exception) { bException = true; } // Windows locked, etc.
 
 			return null;
 		}

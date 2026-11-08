@@ -27,7 +27,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
-    <PreferNativeArm64>true</PreferNativeArm64>
+    <PreferNativeArm64>false</PreferNativeArm64>
     <DocumentationFile>..\Build\KeePassLib\Debug\KeePassLib.xml</DocumentationFile>
     <NoWarn>1591</NoWarn>
   </PropertyGroup>
@@ -39,7 +39,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
-    <PreferNativeArm64>true</PreferNativeArm64>
+    <PreferNativeArm64>false</PreferNativeArm64>
     <DocumentationFile>..\Build\KeePassLib\Release\KeePassLib.xml</DocumentationFile>
     <NoWarn>1591</NoWarn>
   </PropertyGroup>

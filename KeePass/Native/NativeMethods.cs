@@ -473,13 +473,19 @@ namespace KeePass.Native
 		internal static extern int MessageBox(IntPtr hWnd, string lpText,
 			string lpCaption, [MarshalAs(UnmanagedType.U4)] MessageBoxFlags uType);
 
-		[DllImport("User32.dll")]
-		[return: MarshalAs(UnmanagedType.Bool)]
-		internal static extern bool SetProcessDPIAware();
+		// [DllImport("User32.dll")]
+		// [return: MarshalAs(UnmanagedType.Bool)]
+		// internal static extern bool SetProcessDPIAware();
 
+		// [DllImport("ShCore.dll")]
+		// internal static extern int SetProcessDpiAwareness(
+		//	[MarshalAs(UnmanagedType.U4)] ProcessDpiAwareness a);
+
+#if DEBUG
 		[DllImport("ShCore.dll")]
-		internal static extern int SetProcessDpiAwareness(
-			[MarshalAs(UnmanagedType.U4)] ProcessDpiAwareness a);
+		internal static extern int GetProcessDpiAwareness(IntPtr hProcess,
+			ref ProcessDpiAwareness a);
+#endif
 
 		[DllImport("Kernel32.dll")]
 		internal static extern IntPtr CreateToolhelp32Snapshot(

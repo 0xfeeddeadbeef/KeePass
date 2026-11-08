@@ -158,11 +158,10 @@ namespace KeePass.Forms
 			UIUtil.SetButtonImage(m_btnAutoTypeEdit,
 				Properties.Resources.B16x16_Wizard, true);
 
-			m_lvCustomData.ItemDeleteButton = m_btnCDDel;
-
 			m_sdCustomData = m_pwGroup.CustomData.CloneDeep();
 			UIUtil.StrDictListInit(m_lvCustomData);
 			UIUtil.StrDictListUpdate(m_lvCustomData, m_sdCustomData, false);
+			m_lvCustomData.ItemDeleteButton = m_btnCDDel;
 
 			EnableControlsEx();
 

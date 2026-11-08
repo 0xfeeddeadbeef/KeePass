@@ -317,7 +317,7 @@ namespace TrlUtil
 
 		private void OnLinkLangCodeClicked(object sender, LinkLabelLinkClickedEventArgs e)
 		{
-			WinUtil.OpenUrl("https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes", null);
+			WinUtil.OpenUrl("https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes", null);
 		}
 
 		private void SetCurrentFile(string strFilePath)

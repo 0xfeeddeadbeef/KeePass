@@ -19,11 +19,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.IO;
-using System.Windows.Forms;
-using System.Threading;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Text;
+using System.Threading;
+using System.Windows.Forms;
 
 using KeePass.Forms;
 using KeePass.Resources;
@@ -32,10 +33,9 @@ using KeePass.UI;
 using KeePassLib;
 using KeePassLib.Cryptography;
 using KeePassLib.Interfaces;
+using KeePassLib.Native;
 using KeePassLib.Security;
 using KeePassLib.Utility;
-
-using NativeLib = KeePassLib.Native.NativeLib;
 
 namespace KeePass.Util
 {
@@ -179,9 +179,8 @@ namespace KeePass.Util
 				string strTempID, strTempDir;
 				while(true)
 				{
-					byte[] pbRandomID = CryptoRandom.Instance.GetRandomBytes(8);
-					strTempID = Convert.ToBase64String(pbRandomID);
-					strTempID = StrUtil.AlphaNumericOnly(strTempID);
+					strTempID = StrUtil.AlphaNumericOnly(Convert.ToBase64String(
+						CryptoRandom.Instance.GetRandomBytes(8)));
 					if(strTempID.Length == 0) { Debug.Assert(false); continue; }
 
 					strTempDir = strBaseTempDir + strTempID;
@@ -213,15 +212,34 @@ namespace KeePass.Util
 				try { File.Encrypt(strFile); }
 				catch(Exception) { Debug.Assert(false); }
 
+				int iDoStart = 1;
+
 				ProcessStartInfo psi = new ProcessStartInfo();
 				psi.FileName = strFile;
 				psi.UseShellExecute = true;
 				psi.WorkingDirectory = strTempDir;
 
-				ParameterizedThreadStart pts = new ParameterizedThreadStart(
-					BinaryDataUtil.ShellOpenFn);
-				Thread th = new Thread(pts);
-				th.Start(psi);
+				Thread th = new Thread(new ThreadStart(() =>
+				{
+					try
+					{
+						// Let the main thread finish showing the dialog
+						Thread.Sleep(200);
+
+						if(Interlocked.CompareExchange(ref iDoStart, 0, 0) != 0)
+							NativeLib.StartProcess(psi);
+					}
+					catch(Exception ex)
+					{
+						try
+						{
+							if(Interlocked.CompareExchange(ref iDoStart, 0, 0) != 0)
+								MessageService.ShowWarning(ex);
+						}
+						catch(Exception) { Debug.Assert(false); }
+					}
+				}));
+				th.Start();
 
 				string strMsgMain = KPRes.AttachExtOpened + MessageService.NewParagraph +
 					KPRes.AttachExtOpenedPost + ":";
@@ -266,14 +284,25 @@ namespace KeePass.Util
 
 					bImport = MessageService.AskYesNo(sb.ToString());
 				}
+				// Do not start the file after closing the dialog (FR 2996)
+				Interlocked.Exchange(ref iDoStart, 0);
 
-				if(bImport && !opt.ReadOnly)
+				// Rename the file; this reduces the risk that the external
+				// application sees the overwrite data, if it is still running
+				try
 				{
-					while(true)
+					string strFileR;
+					ulong u = 0;
+					NumberFormatInfo nfi = NumberFormatInfo.InvariantInfo;
+					do { strFileR = strTempDir + "." + (u++).ToString(nfi) + ".tmp"; }
+					while(File.Exists(strFileR));
+
+					while(File.Exists(strFile))
 					{
 						try
 						{
-							pbResult = File.ReadAllBytes(strFile);
+							File.Move(strFile, strFileR);
+							strFile = strFileR;
 							break;
 						}
 						catch(Exception exR)
@@ -282,10 +311,23 @@ namespace KeePass.Util
 						}
 					}
 				}
+				catch(Exception) { Debug.Assert(false); }
 
-				string strReportObj = null;
+				if(bImport && !opt.ReadOnly)
+				{
+					while(true)
+					{
+						try { pbResult = File.ReadAllBytes(strFile); break; }
+						catch(Exception exR)
+						{
+							if(!AskForRetry(strFile, exR)) break;
+						}
+					}
+				}
+
 				while(true)
 				{
+					string strReportObj = null;
 					try
 					{
 						strReportObj = strFile;
@@ -335,27 +377,6 @@ namespace KeePass.Util
 
 			return ((i == (int)DialogResult.Retry) || (i == (int)DialogResult.Yes) ||
 				(i == (int)DialogResult.OK));
-		}
-
-		private static void ShellOpenFn(object o)
-		{
-			if(o == null) { Debug.Assert(false); return; }
-
-			try
-			{
-				ProcessStartInfo psi = (o as ProcessStartInfo);
-				if(psi == null) { Debug.Assert(false); return; }
-
-				// Let the main thread finish showing the message box
-				Thread.Sleep(200);
-
-				NativeLib.StartProcess(psi);
-			}
-			catch(Exception ex)
-			{
-				try { MessageService.ShowWarning(ex); }
-				catch(Exception) { Debug.Assert(false); }
-			}
 		}
 
 		internal static void BuildOpenWithMenu(DynamicMenu dm, string strItem,

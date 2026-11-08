@@ -52,7 +52,7 @@ namespace TrlUtil
 		{
 			try
 			{
-				ConfigureDpi();
+				CheckDpi();
 				Application.EnableVisualStyles();
 				Application.SetCompatibleTextRenderingDefault(false);
 
@@ -86,21 +86,20 @@ namespace TrlUtil
 			Application.Run(new MainForm());
 		}
 
-		private static void ConfigureDpi()
+		private static void CheckDpi()
 		{
-			// Ensure that base hashes are computed with respect to 100% DPI
-			try
+#if DEBUG
+			// Base hashes should be computed with respect to 100% DPI;
+			// the DPI awareness should be set in the application manifest
+			if(WinUtil.IsAtLeastWindows10) // 8.1 partially
 			{
-				if(WinUtil.IsAtLeastWindows10) // 8.1 partially
-				{
-					if(NativeMethods.SetProcessDpiAwareness(
-						NativeMethods.ProcessDpiAwareness.Unaware) < 0)
-					{
-						Debug.Assert(false);
-					}
-				}
+				NativeMethods.ProcessDpiAwareness a =
+					NativeMethods.ProcessDpiAwareness.SystemAware;
+				Debug.Assert(NativeMethods.GetProcessDpiAwareness(IntPtr.Zero,
+					ref a) >= 0);
+				Debug.Assert(a == NativeMethods.ProcessDpiAwareness.Unaware);
 			}
-			catch(Exception) { Debug.Assert(false); }
+#endif
 		}
 
 		private static void ExecuteCmd(string strCmd, string strFile)

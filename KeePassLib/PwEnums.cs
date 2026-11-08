@@ -212,9 +212,8 @@ namespace KeePassLib
 		None = 0x0,
 
 		/// <summary>
-		/// Empty standard string fields are considered to be the
-		/// same as non-existing standard string fields.
-		/// This doesn't affect custom string comparisons.
+		/// Consider empty standard string fields to be the same as non-existing
+		/// standard string fields. This does not affect custom string fields.
 		/// </summary>
 		NullEmptyEquivStd = 0x1,
 
@@ -226,6 +225,8 @@ namespace KeePassLib
 
 		// For groups:
 		PropertiesOnly = 0x40,
+
+		NormalizeNewLines = 0x80,
 
 		IgnoreTimes = (IgnoreLastAccess | IgnoreLastMod)
 	}

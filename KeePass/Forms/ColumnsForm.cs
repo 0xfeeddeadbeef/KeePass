@@ -267,18 +267,15 @@ namespace KeePass.Forms
 
 		private void UpdateListEx(bool bGuiToInternal)
 		{
-			if(bGuiToInternal)
-			{
-			}
-			else // Internal to GUI
+			if(!bGuiToInternal) // Internal to GUI
 			{
 				foreach(ListViewItem lvi in m_lvColumns.Items)
 				{
 					AceColumn c = (lvi.Tag as AceColumn);
 					if(c == null) { Debug.Assert(false); continue; }
 
-					string str = (c.HideWithAsterisks ? KPRes.Yes : KPRes.No);
-					lvi.SubItems[1].Text = str;
+					UIUtil.SetText(lvi.SubItems[1], (c.HideWithAsterisks ?
+						KPRes.Yes : KPRes.No));
 				}
 			}
 		}

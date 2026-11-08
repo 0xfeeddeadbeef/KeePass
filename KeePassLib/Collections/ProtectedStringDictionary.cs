@@ -101,18 +101,17 @@ namespace KeePassLib.Collections
 		}
 
 		[Obsolete]
-		public bool EqualsDictionary(ProtectedStringDictionary d,
-			MemProtCmpMode mpCompare)
+		public bool EqualsDictionary(ProtectedStringDictionary d, MemProtCmpMode mpcm)
 		{
-			return EqualsDictionary(d, PwCompareOptions.None, mpCompare);
+			return EqualsDictionary(d, PwCompareOptions.None, mpcm);
 		}
 
-		public bool EqualsDictionary(ProtectedStringDictionary d,
-			PwCompareOptions pwOpt, MemProtCmpMode mpCompare)
+		public bool EqualsDictionary(ProtectedStringDictionary d, PwCompareOptions pco,
+			MemProtCmpMode mpcm)
 		{
 			if(d == null) { Debug.Assert(false); return false; }
 
-			bool bNeEqStd = ((pwOpt & PwCompareOptions.NullEmptyEquivStd) !=
+			bool bNeEqStd = ((pco & PwCompareOptions.NullEmptyEquivStd) !=
 				PwCompareOptions.None);
 			if(!bNeEqStd)
 			{
@@ -129,17 +128,18 @@ namespace KeePassLib.Collections
 
 				if(ps == null) return false;
 
-				if(mpCompare == MemProtCmpMode.Full)
+				if(mpcm == MemProtCmpMode.Full)
 				{
 					if(ps.IsProtected != kvp.Value.IsProtected) return false;
 				}
-				else if(mpCompare == MemProtCmpMode.CustomOnly)
+				else if(mpcm == MemProtCmpMode.CustomOnly)
 				{
 					if(!bStdField && (ps.IsProtected != kvp.Value.IsProtected))
 						return false;
 				}
+				else { Debug.Assert(mpcm == MemProtCmpMode.None); }
 
-				if(!ps.Equals(kvp.Value, false)) return false;
+				if(!ps.Equals(kvp.Value, false, pco)) return false;
 			}
 
 			if(bNeEqStd)

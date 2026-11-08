@@ -70,6 +70,7 @@
 <ul>
 <li>Example: <a href="#ex_xpe_icon">Icon</a></li>
 <li>Example: <a href="#ex_xpe_exp_year">Expired in specific year</a></li>
+<li>Example: <a href="#ex_xpe_exp_tp">Expired in specific time period</a></li>
 <li>Example: <a href="#ex_xpe_str_c">Custom string field</a></li>
 <li>Example: <a href="#ex_xpe_bin_ext">Attached PDF files</a></li>
 <li>Example: <a href="#ex_xpe_clr_bg">Background color</a></li>
@@ -206,13 +207,17 @@ target="_blank">KeePass 2.x XML</a> DOM of the current database is
 created in memory and the specified XPath expression is used to
 find entries.</p>
 
+<p>If you want to find and <em>replace</em> data using XPath and regular
+expressions, see the <a href="https://keepass.info/help/v2/xml_replace.html"
+target="_blank">XML Replace</a> feature.</p>
+
 <p>In order to see your database in the KeePass 2.x XML format, you can
 export it (via 'File' &rarr; 'Export') to a 'KeePass XML (2.x)' file.</p>
 
 <p>Information about XPath expressions can be found here:</p>
 <ul>
-<li><a href="https://www.w3.org/TR/xpath20/"
-target="_blank">W3C: XML Path Language (XPath) 2.0</a></li>
+<li><a href="https://www.w3.org/TR/xpath-10/"
+target="_blank">W3C: XML Path Language (XPath) 1.0</a></li>
 <!-- <li><a href="https://www.w3.org/TR/xquery-operators/"
 target="_blank">W3C: XQuery 1.0 and XPath 2.0 Functions and Operators</a></li> -->
 <!-- https://msdn.microsoft.com/en-us/library/ms256115.aspx -->
@@ -227,9 +232,51 @@ target="_blank">Microsoft: XPath Examples</a></li>
 target="_blank">Wikipedia: XPath</a></li>
 </ul>
 
-<p>If you want to find and <em>replace</em> data using XPath and regular
-expressions, see the <a href="https://keepass.info/help/v2/xml_replace.html"
-target="_blank">XML Replace</a> feature.</p>
+<p>When running on .NET, <a href="https://www.w3.org/TR/xpath-10/#corelib"
+target="_blank">XPath 1.0 functions</a> are supported. Additionally, KeePass
+supports the following XPath extension functions:</p>
+
+<ul class="withspc">
+<li><code>boolean <b>kp:matches</b>(string strInput, string strPattern,
+string strFlags = '')</code>:<br />
+This function returns <code>true</code> if the string <code>strInput</code>
+matches the regular expression <code>strPattern</code>.
+The string <code>strFlags</code> is optional and may contain one or more of the
+following flags:
+<ul>
+<li><code>s</code>: Single-line mode.</li>
+<li><code>m</code>: Multi-line mode.</li>
+<li><code>i</code>: Case-insensitive matching.</li>
+<li><code>x</code>: Ignore pattern white-space.</li>
+<li><code>q</code>: Treat pattern characters literally.</li>
+</ul>
+For details about regular expressions and the flags, see the websites linked in
+the section about the <a href="#mode_re">regular expression search mode</a>.<br />
+The <code>kp:matches</code> function is basically the same as the
+<a href="https://www.w3.org/TR/xpath-functions/#func-matches"
+target="_blank"><code>fn:matches</code></a> function of XPath 2.0 and higher
+(which is not necessarily supported by the framework).</li>
+
+<li><code>number <b>kp:string-compare</b>(string strX, string strY,
+string strLanguage = '', string strOptions = '')</code>:<br />
+This function compares the strings <code>strX</code> and <code>strY</code>
+lexicographically (by default case-sensitive, lower-case first). It returns
+a number less than zero when <code>strX &lt; strY</code>,
+0 when <code>strX = strY</code> and
+a number greater than zero when <code>strX &gt; strY</code>.
+The strings <code>strLanguage</code> and <code>strOptions</code> are optional.
+<code>strLanguage</code> specifies the language to determine the sort order
+(e.g. 'en-US' or 'de-DE'; an empty string means the current language).
+Supported options:
+<ul>
+<li><code>u</code>: Case-sensitive comparison, upper-case first.</li>
+<li><code>i</code>: Case-insensitive comparison.</li>
+</ul>
+The <code>kp:string-compare</code> function is basically the same as Microsoft's
+<a href="https://learn.microsoft.com/en-us/previous-versions/dotnet/netframework-4.0/ms256114(v=vs.100)"
+target="_blank"><code>ms:string-compare</code></a> function
+(which is not necessarily supported by the framework).</li>
+</ul>
 
 <p><b>Examples.</b></p>
 
@@ -248,8 +295,19 @@ target="_blank">XML Replace</a> feature.</p>
 <colgroup><col style="width: 20%;" /><col style="width: 80%;" /></colgroup>
 <tr><th colspan="2">Expired in specific year</th></tr>
 <tr><td>Find what:</td>
-<td><code>//Entry/Times[(Expires = 'True') and starts-with(ExpiryTime, '2022-')]/..</code></td></tr>
-<tr><td colspan="2">Finds every entry that has expired in 2022.</td></tr>
+<td><code>//Entry/Times[(Expires = 'True') and starts-with(ExpiryTime, '2025-')]/..</code></td></tr>
+<tr><td colspan="2">Finds every entry that has expired in 2025 (UTC).</td></tr>
+</table>
+
+<br />
+
+<table class="tablebox searchextbl" id="ex_xpe_exp_tp">
+<colgroup><col style="width: 20%;" /><col style="width: 80%;" /></colgroup>
+<tr><th colspan="2">Expired in specific time period</th></tr>
+<tr><td>Find what:</td>
+<td><code>//Entry/Times[(Expires = 'True') and (kp:string-compare(ExpiryTime, '2024-01-02T03:04') &gt;= 0) and (kp:string-compare(ExpiryTime, '2026-05-06T07:08') &lt;= 0)]/..</code></td></tr>
+<tr><td colspan="2">Finds every entry that has expired between
+2024-01-02 03:04 and 2026-05-06 07:08 (UTC).</td></tr>
 </table>
 
 <br />
@@ -270,7 +328,7 @@ named 'Telephone' whose value contains '12345'.</td></tr>
 <colgroup><col style="width: 20%;" /><col style="width: 80%;" /></colgroup>
 <tr><th colspan="2">Attached PDF files</th></tr>
 <tr><td>Find what:</td>
-<td><code>//Entry/Binary/Key[(string-length(.) >= 4) and (substring(., string-length(.) - 3) = '.pdf')]/../..</code></td></tr>
+<td><code>//Entry/Binary/Key[(string-length(.) &gt;= 4) and (substring(., string-length(.) - 3) = '.pdf')]/../..</code></td></tr>
 <tr><td colspan="2">Finds every entry that has a file attachment whose
 name ends with '.pdf'.</td></tr>
 <tr><td colspan="2">If you want to find large entries instead, use the
@@ -317,7 +375,7 @@ the tags.</td></tr>
 <colgroup><col style="width: 20%;" /><col style="width: 80%;" /></colgroup>
 <tr><th colspan="2">History entry count</th></tr>
 <tr><td>Find what:</td>
-<td><code>//Entry[count(History/Entry) >= 4]</code></td></tr>
+<td><code>//Entry[count(History/Entry) &gt;= 4]</code></td></tr>
 <tr><td>Options:</td><td>&#9745; History</td></tr>
 <tr><td colspan="2">Finds every entry that has at least 4 history entries.</td></tr>
 </table>

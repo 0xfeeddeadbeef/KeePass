@@ -258,11 +258,12 @@ namespace KeePassLib
 		}
 
 		/// <summary>
-		/// Custom data container that can be used by plugins to store
-		/// own data in KeePass entries.
-		/// The data is stored in the encrypted part of encrypted
-		/// database files.
+		/// Custom data dictionary, which can be used by plugins/ports to store
+		/// own data in the entry.
 		/// Use unique names for your items, e.g. "PluginName_ItemName".
+		/// The data is stored encrypted in a KDBX file, but it is not protected
+		/// in the process memory. Sensitive data should be stored in protected
+		/// entry strings instead.
 		/// </summary>
 		public StringDictionaryEx CustomData
 		{
@@ -369,13 +370,13 @@ namespace KeePassLib
 			bool bIgnoreLastMod, bool bIgnoreLastAccess, bool bIgnoreHistory,
 			bool bIgnoreThisLastBackup)
 		{
-			PwCompareOptions pwOpt = PwCompareOptions.None;
-			if(bIgnoreParentGroup) pwOpt |= PwCompareOptions.IgnoreParentGroup;
-			if(bIgnoreLastMod) pwOpt |= PwCompareOptions.IgnoreLastMod;
-			if(bIgnoreLastAccess) pwOpt |= PwCompareOptions.IgnoreLastAccess;
-			if(bIgnoreHistory) pwOpt |= PwCompareOptions.IgnoreHistory;
-			if(bIgnoreThisLastBackup) pwOpt |= PwCompareOptions.IgnoreLastBackup;
-			return pwOpt;
+			PwCompareOptions pco = PwCompareOptions.None;
+			if(bIgnoreParentGroup) pco |= PwCompareOptions.IgnoreParentGroup;
+			if(bIgnoreLastMod) pco |= PwCompareOptions.IgnoreLastMod;
+			if(bIgnoreLastAccess) pco |= PwCompareOptions.IgnoreLastAccess;
+			if(bIgnoreHistory) pco |= PwCompareOptions.IgnoreHistory;
+			if(bIgnoreThisLastBackup) pco |= PwCompareOptions.IgnoreLastBackup;
+			return pco;
 		}
 
 		[Obsolete]
@@ -390,26 +391,23 @@ namespace KeePassLib
 		[Obsolete]
 		public bool EqualsEntry(PwEntry pe, bool bIgnoreParentGroup, bool bIgnoreLastMod,
 			bool bIgnoreLastAccess, bool bIgnoreHistory, bool bIgnoreThisLastBackup,
-			MemProtCmpMode mpCmpStr)
+			MemProtCmpMode mpcm)
 		{
 			return EqualsEntry(pe, BuildCmpOpt(bIgnoreParentGroup, bIgnoreLastMod,
-				bIgnoreLastAccess, bIgnoreHistory, bIgnoreThisLastBackup), mpCmpStr);
+				bIgnoreLastAccess, bIgnoreHistory, bIgnoreThisLastBackup), mpcm);
 		}
 
-		public bool EqualsEntry(PwEntry pe, PwCompareOptions pwOpt,
-			MemProtCmpMode mpCmpStr)
+		public bool EqualsEntry(PwEntry pe, PwCompareOptions pco, MemProtCmpMode mpcm)
 		{
 			if(pe == null) { Debug.Assert(false); return false; }
 
-			bool bNeEqStd = ((pwOpt & PwCompareOptions.NullEmptyEquivStd) !=
+			bool bIgnoreLastAccess = ((pco & PwCompareOptions.IgnoreLastAccess) !=
 				PwCompareOptions.None);
-			bool bIgnoreLastAccess = ((pwOpt & PwCompareOptions.IgnoreLastAccess) !=
-				PwCompareOptions.None);
-			bool bIgnoreLastMod = ((pwOpt & PwCompareOptions.IgnoreLastMod) !=
+			bool bIgnoreLastMod = ((pco & PwCompareOptions.IgnoreLastMod) !=
 				PwCompareOptions.None);
 
 			if(!m_pu.Equals(pe.m_pu)) return false;
-			if((pwOpt & PwCompareOptions.IgnoreParentGroup) == PwCompareOptions.None)
+			if((pco & PwCompareOptions.IgnoreParentGroup) == PwCompareOptions.None)
 			{
 				if(m_pgParent != pe.m_pgParent) return false;
 				if(!bIgnoreLastMod && !TimeUtil.EqualsFloor(m_tParentGroupLastMod,
@@ -419,17 +417,16 @@ namespace KeePassLib
 					return false;
 			}
 
-			if(!m_dStrings.EqualsDictionary(pe.m_dStrings, pwOpt, mpCmpStr))
+			if(!m_dStrings.EqualsDictionary(pe.m_dStrings, pco, mpcm))
 				return false;
 			if(!m_dBinaries.EqualsDictionary(pe.m_dBinaries)) return false;
 
 			if(!m_cfgAutoType.Equals(pe.m_cfgAutoType)) return false;
 
-			if((pwOpt & PwCompareOptions.IgnoreHistory) == PwCompareOptions.None)
+			if((pco & PwCompareOptions.IgnoreHistory) == PwCompareOptions.None)
 			{
-				bool bIgnoreLastBackup = ((pwOpt & PwCompareOptions.IgnoreLastBackup) !=
+				bool bIgnoreLastBackup = ((pco & PwCompareOptions.IgnoreLastBackup) !=
 					PwCompareOptions.None);
-
 				if(!bIgnoreLastBackup && (m_lHistory.UCount != pe.m_lHistory.UCount))
 					return false;
 				if(bIgnoreLastBackup && (m_lHistory.UCount == 0))
@@ -440,15 +437,13 @@ namespace KeePassLib
 				if(bIgnoreLastBackup && ((m_lHistory.UCount - 1) != pe.m_lHistory.UCount))
 					return false;
 
-				PwCompareOptions cmpSub = PwCompareOptions.IgnoreParentGroup;
-				if(bNeEqStd) cmpSub |= PwCompareOptions.NullEmptyEquivStd;
-				if(bIgnoreLastMod) cmpSub |= PwCompareOptions.IgnoreLastMod;
-				if(bIgnoreLastAccess) cmpSub |= PwCompareOptions.IgnoreLastAccess;
-
+				PwCompareOptions pcoSub = (PwCompareOptions.IgnoreParentGroup | (pco &
+					(PwCompareOptions.NullEmptyEquivStd | PwCompareOptions.IgnoreTimes |
+					PwCompareOptions.NormalizeNewLines)));
 				for(uint uHist = 0; uHist < pe.m_lHistory.UCount; ++uHist)
 				{
-					if(!m_lHistory.GetAt(uHist).EqualsEntry(pe.m_lHistory.GetAt(
-						uHist), cmpSub, MemProtCmpMode.None))
+					if(!m_lHistory.GetAt(uHist).EqualsEntry(pe.m_lHistory.GetAt(uHist),
+						pcoSub, MemProtCmpMode.None))
 						return false;
 				}
 			}
@@ -624,14 +619,15 @@ namespace KeePassLib
 		{
 			if(peData == null) { Debug.Assert(false); return false; }
 
-			PwCompareOptions cmpOpt = (PwCompareOptions.IgnoreParentGroup |
-				PwCompareOptions.IgnoreHistory | PwCompareOptions.NullEmptyEquivStd);
-			if(bIgnoreLastMod) cmpOpt |= PwCompareOptions.IgnoreLastMod;
-			if(bIgnoreLastAccess) cmpOpt |= PwCompareOptions.IgnoreLastAccess;
+			PwCompareOptions pco = (PwCompareOptions.NullEmptyEquivStd |
+				PwCompareOptions.IgnoreParentGroup | PwCompareOptions.IgnoreHistory |
+				PwCompareOptions.NormalizeNewLines);
+			if(bIgnoreLastMod) pco |= PwCompareOptions.IgnoreLastMod;
+			if(bIgnoreLastAccess) pco |= PwCompareOptions.IgnoreLastAccess;
 
 			foreach(PwEntry pe in m_lHistory)
 			{
-				if(pe.EqualsEntry(peData, cmpOpt, MemProtCmpMode.None)) return true;
+				if(pe.EqualsEntry(peData, pco, MemProtCmpMode.None)) return true;
 			}
 
 			return false;
@@ -785,6 +781,7 @@ namespace KeePassLib
 			foreach(KeyValuePair<string, string> kvp in m_dCustomData)
 				cc += (ulong)kvp.Key.Length + (ulong)kvp.Value.Length;
 
+			Debug.Assert(sizeof(char) == 2); // On all systems
 			return (cb + (cc << 1));
 		}
 

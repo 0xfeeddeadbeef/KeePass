@@ -135,8 +135,7 @@ namespace KeePass.Forms
 			if(m_strInitName != null) m_cmbName.Text = m_strInitName;
 			if(m_psInitValue != null)
 			{
-				m_rtbValue.Text = StrUtil.NormalizeNewLines(
-					m_psInitValue.ReadString(), true);
+				m_rtbValue.Text = m_psInitValue.ReadString();
 				UIUtil.SetChecked(m_cbProtect, m_psInitValue.IsProtected);
 			}
 
@@ -270,17 +269,12 @@ namespace KeePass.Forms
 					m_dStrings.Remove(m_strInitName);
 			}
 
-			string strValue = StrUtil.NormalizeNewLines(m_rtbValue.Text, true);
+			string strValue = m_rtbValue.Text;
 			if(m_psInitValue != null)
 			{
-				string strValueIn = m_psInitValue.ReadString();
-
-				// If the initial and the new value differ only by
-				// new-line encoding, use the initial value to avoid
-				// unnecessary changes
-				if(StrUtil.NormalizeNewLines(strValue, false) ==
-					StrUtil.NormalizeNewLines(strValueIn, false))
-					strValue = strValueIn;
+				string strInitValue = m_psInitValue.ReadString();
+				if(StrUtil.EqualsNLNormalized(strValue, strInitValue))
+					strValue = strInitValue; // Avoid unnecessary changes
 			}
 
 			CheckState cs = m_cbProtect.CheckState;

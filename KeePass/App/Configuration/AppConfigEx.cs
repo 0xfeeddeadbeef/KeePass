@@ -399,12 +399,12 @@ namespace KeePass.App.Configuration
 
 			ChangePathsRelAbs(false);
 			ObfuscateCred(true);
-			RemoveSensitiveInfo(true);
+			RemoveSensitiveSearchInfo(true);
 		}
 
 		internal void OnSavePost()
 		{
-			RemoveSensitiveInfo(false);
+			RemoveSensitiveSearchInfo(false);
 			ObfuscateCred(false);
 			ChangePathsRelAbs(true);
 		}
@@ -479,7 +479,20 @@ namespace KeePass.App.Configuration
 			else aceInt.ProxyPassword = StrUtil.Deobfuscate(aceInt.ProxyPassword);
 		}
 
-		private void RemoveSensitiveInfo(bool bRemove)
+		internal void RemoveSensitiveSearchInfo()
+		{
+			SearchParameters sp = this.Search.LastUsedProfile;
+
+			if(!string.IsNullOrEmpty(sp.SearchString))
+			{
+				sp = sp.Clone();
+				sp.SearchString = string.Empty;
+
+				this.Search.LastUsedProfile = sp;
+			}
+		}
+
+		private void RemoveSensitiveSearchInfo(bool bRemove)
 		{
 			SearchParameters sp = this.Search.LastUsedProfile;
 
@@ -487,7 +500,8 @@ namespace KeePass.App.Configuration
 			{
 				Debug.Assert(m_strSearchString == null);
 				m_strSearchString = sp.SearchString;
-				sp.SearchString = string.Empty;
+
+				RemoveSensitiveSearchInfo();
 			}
 			else
 			{

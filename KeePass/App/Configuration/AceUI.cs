@@ -72,8 +72,8 @@ namespace KeePass.App.Configuration
 		ShowLastAccessTime = 0x20000,
 		HideNewDbInfoDialogs = 0x40000,
 		HideAutoTypeObfInfo = 0x80000,
-		NoQuickSearchClear = 0x100000,
-		SecureDesktopIme = 0x200000,
+		DisableSearchClear = 0x100000,
+		EnableSecureDesktopIme = 0x200000,
 		AdjustWeakKdfParameters = 0x400000
 	}
 

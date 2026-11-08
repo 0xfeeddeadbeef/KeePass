@@ -238,9 +238,9 @@ namespace KeePass.Plugins
 			if(slStatus != null)
 				slStatus.SetText(KPRes.PluginLoadFailed, LogStatusType.Info);
 
-			bool bShowExcp = PwDefs.DebugMode;
 			string strExcpS = ((ex != null) ? StrUtil.FormatException(ex, false) : null);
 			string strExcpF = ((ex != null) ? StrUtil.FormatException(ex, true) : null);
+			bool bShowExcp = PwDefs.DebugMode;
 
 			string strMsg = strPath + MessageService.NewParagraph + KPRes.PluginLoadFailed;
 			if(!string.IsNullOrEmpty(strExcpS))

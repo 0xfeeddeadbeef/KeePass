@@ -268,7 +268,7 @@ namespace KeePass.UI
 				try
 				{
 					ulong uif = Program.Config.UI.UIFlags;
-					if((uif & (ulong)AceUIFlags.SecureDesktopIme) == 0)
+					if((uif & (ulong)AceUIFlags.EnableSecureDesktopIme) == 0)
 						NativeMethods.ImmDisableIME(0); // Always false on 2000/XP
 				}
 				catch(Exception) { Debug.Assert(!WinUtil.IsAtLeastWindows2000); }

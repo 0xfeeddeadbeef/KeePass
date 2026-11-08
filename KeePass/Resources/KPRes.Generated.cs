@@ -104,6 +104,7 @@ namespace KeePass.Resources
 			m_strAutoTypeReleaseAltWithKeyPress = TryGetEx(dictNew, "AutoTypeReleaseAltWithKeyPress", m_strAutoTypeReleaseAltWithKeyPress);
 			m_strAutoTypeSelectedNoEntry = TryGetEx(dictNew, "AutoTypeSelectedNoEntry", m_strAutoTypeSelectedNoEntry);
 			m_strAutoTypeSequenceInvalid = TryGetEx(dictNew, "AutoTypeSequenceInvalid", m_strAutoTypeSequenceInvalid);
+			m_strAutoTypeSequences = TryGetEx(dictNew, "AutoTypeSequences", m_strAutoTypeSequences);
 			m_strAutoTypeUnknownPlaceholder = TryGetEx(dictNew, "AutoTypeUnknownPlaceholder", m_strAutoTypeUnknownPlaceholder);
 			m_strAutoTypeXDoToolRequired = TryGetEx(dictNew, "AutoTypeXDoToolRequired", m_strAutoTypeXDoToolRequired);
 			m_strAutoTypeXDoToolRequiredGlobalVer = TryGetEx(dictNew, "AutoTypeXDoToolRequiredGlobalVer", m_strAutoTypeXDoToolRequiredGlobalVer);
@@ -333,6 +334,7 @@ namespace KeePass.Resources
 			m_strErrorCode = TryGetEx(dictNew, "ErrorCode", m_strErrorCode);
 			m_strErrors = TryGetEx(dictNew, "Errors", m_strErrors);
 			m_strEvent = TryGetEx(dictNew, "Event", m_strEvent);
+			m_strExamples = TryGetEx(dictNew, "Examples", m_strExamples);
 			m_strExecuteCmdLineUrl = TryGetEx(dictNew, "ExecuteCmdLineUrl", m_strExecuteCmdLineUrl);
 			m_strExit = TryGetEx(dictNew, "Exit", m_strExit);
 			m_strExitInsteadOfLockingAfterTime = TryGetEx(dictNew, "ExitInsteadOfLockingAfterTime", m_strExitInsteadOfLockingAfterTime);
@@ -438,6 +440,7 @@ namespace KeePass.Resources
 			m_strGroupPath = TryGetEx(dictNew, "GroupPath", m_strGroupPath);
 			m_strGroupsSkipped = TryGetEx(dictNew, "GroupsSkipped", m_strGroupsSkipped);
 			m_strGroupsSkipped1 = TryGetEx(dictNew, "GroupsSkipped1", m_strGroupsSkipped1);
+			m_strHelp = TryGetEx(dictNew, "Help", m_strHelp);
 			m_strHelpPlh = TryGetEx(dictNew, "HelpPlh", m_strHelpPlh);
 			m_strHelpSourceNoLocalOption = TryGetEx(dictNew, "HelpSourceNoLocalOption", m_strHelpSourceNoLocalOption);
 			m_strHelpSourceSelection = TryGetEx(dictNew, "HelpSourceSelection", m_strHelpSourceSelection);
@@ -559,6 +562,7 @@ namespace KeePass.Resources
 			m_strLockOnSessionSwitch = TryGetEx(dictNew, "LockOnSessionSwitch", m_strLockOnSessionSwitch);
 			m_strLockOnSuspend = TryGetEx(dictNew, "LockOnSuspend", m_strLockOnSuspend);
 			m_strLockWorkspace = TryGetEx(dictNew, "LockWorkspace", m_strLockWorkspace);
+			m_strLoginTypes = TryGetEx(dictNew, "LoginTypes", m_strLoginTypes);
 			m_strMacAddress = TryGetEx(dictNew, "MacAddress", m_strMacAddress);
 			m_strMainInstruction = TryGetEx(dictNew, "MainInstruction", m_strMainInstruction);
 			m_strMainWindow = TryGetEx(dictNew, "MainWindow", m_strMainWindow);
@@ -1093,6 +1097,7 @@ namespace KeePass.Resources
 			"AutoTypeReleaseAltWithKeyPress",
 			"AutoTypeSelectedNoEntry",
 			"AutoTypeSequenceInvalid",
+			"AutoTypeSequences",
 			"AutoTypeUnknownPlaceholder",
 			"AutoTypeXDoToolRequired",
 			"AutoTypeXDoToolRequiredGlobalVer",
@@ -1322,6 +1327,7 @@ namespace KeePass.Resources
 			"ErrorCode",
 			"Errors",
 			"Event",
+			"Examples",
 			"ExecuteCmdLineUrl",
 			"Exit",
 			"ExitInsteadOfLockingAfterTime",
@@ -1427,6 +1433,7 @@ namespace KeePass.Resources
 			"GroupPath",
 			"GroupsSkipped",
 			"GroupsSkipped1",
+			"Help",
 			"HelpPlh",
 			"HelpSourceNoLocalOption",
 			"HelpSourceSelection",
@@ -1548,6 +1555,7 @@ namespace KeePass.Resources
 			"LockOnSessionSwitch",
 			"LockOnSuspend",
 			"LockWorkspace",
+			"LoginTypes",
 			"MacAddress",
 			"MainInstruction",
 			"MainWindow",
@@ -2866,6 +2874,17 @@ namespace KeePass.Resources
 			get { return m_strAutoTypeSequenceInvalid; }
 		}
 
+		private static string m_strAutoTypeSequences =
+			@"Auto-Type Sequences";
+		/// <summary>
+		/// Look up a localized string similar to
+		/// 'Auto-Type Sequences'.
+		/// </summary>
+		public static string AutoTypeSequences
+		{
+			get { return m_strAutoTypeSequences; }
+		}
+
 		private static string m_strAutoTypeUnknownPlaceholder =
 			@"The following auto-type placeholder or special key code is unknown/unsupported:";
 		/// <summary>
@@ -3285,10 +3304,10 @@ namespace KeePass.Resources
 		}
 
 		private static string m_strClipboardClearTime =
-			@"&Clipboard auto-clear time (seconds; main entry list)";
+			@"&Clear clipboard automatically (seconds; main entry list)";
 		/// <summary>
 		/// Look up a localized string similar to
-		/// '&amp;Clipboard auto-clear time (seconds; main entry list)'.
+		/// '&amp;Clear clipboard automatically (seconds; main entry list)'.
 		/// </summary>
 		public static string ClipboardClearTime
 		{
@@ -5385,6 +5404,17 @@ namespace KeePass.Resources
 			get { return m_strEvent; }
 		}
 
+		private static string m_strExamples =
+			@"Examples";
+		/// <summary>
+		/// Look up a localized string similar to
+		/// 'Examples'.
+		/// </summary>
+		public static string Examples
+		{
+			get { return m_strExamples; }
+		}
+
 		private static string m_strExecuteCmdLineUrl =
 			@"Execute command line / URL";
 		/// <summary>
@@ -6538,6 +6568,17 @@ namespace KeePass.Resources
 		public static string GroupsSkipped1
 		{
 			get { return m_strGroupsSkipped1; }
+		}
+
+		private static string m_strHelp =
+			@"Help";
+		/// <summary>
+		/// Look up a localized string similar to
+		/// 'Help'.
+		/// </summary>
+		public static string Help
+		{
+			get { return m_strHelp; }
 		}
 
 		private static string m_strHelpPlh =
@@ -7869,6 +7910,17 @@ namespace KeePass.Resources
 		public static string LockWorkspace
 		{
 			get { return m_strLockWorkspace; }
+		}
+
+		private static string m_strLoginTypes =
+			@"single-step login, two-step login, ...";
+		/// <summary>
+		/// Look up a localized string similar to
+		/// 'single-step login, two-step login, ...'.
+		/// </summary>
+		public static string LoginTypes
+		{
+			get { return m_strLoginTypes; }
 		}
 
 		private static string m_strMacAddress =

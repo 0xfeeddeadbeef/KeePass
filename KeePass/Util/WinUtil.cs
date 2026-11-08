@@ -169,18 +169,20 @@ namespace KeePass.Util
 
 			g_bIsWindows9x = (os.Platform == PlatformID.Win32Windows);
 			g_bIsWindows2000 = ((v.Major == 5) && (v.Minor == 0));
-			g_bIsWindowsXP = ((v.Major == 5) && (v.Minor == 1));
+			g_bIsWindowsXP = ((v.Major == 5) && (v.Minor >= 1));
 
 			g_bIsAtLeastWindows2000 = (v.Major >= 5);
 			g_bIsAtLeastWindowsVista = (v.Major >= 6);
 			g_bIsAtLeastWindows7 = ((v.Major >= 7) || ((v.Major == 6) && (v.Minor >= 1)));
 			g_bIsAtLeastWindows8 = ((v.Major >= 7) || ((v.Major == 6) && (v.Minor >= 2)));
+			g_bIsAtLeastWindows10 = (v.Major >= 10); // Cf. application manifest
 
-			// Environment.OSVersion is reliable only up to version 6.2;
-			// https://msdn.microsoft.com/library/windows/desktop/ms724832.aspx
-			g_bIsAtLeastWindows10 = (RegUtil.GetValue<uint>(
+			// Without declaring supported operating systems in the application
+			// manifest, Environment.OSVersion is reliable only up to version 6.2;
+			// https://learn.microsoft.com/en-us/windows/win32/sysinfo/operating-system-version
+			Debug.Assert(g_bIsAtLeastWindows10 == (RegUtil.GetValue<uint>(
 				"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
-				"CurrentMajorVersionNumber") >= 10);
+				"CurrentMajorVersionNumber") >= 10));
 
 			try
 			{

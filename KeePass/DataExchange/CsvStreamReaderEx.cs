@@ -99,10 +99,10 @@ namespace KeePass.DataExchange
 			string strInput = strData;
 
 			// Normalize to Unix "\n" right now; the new lines are
-			// converted back in the <c>AddField</c> method
+			// converted back in the AddField method
 			strInput = StrUtil.NormalizeNewLines(strInput, false);
 
-			strInput = strInput.Trim(new char[] { (char)0 });
+			strInput = strInput.Trim('\0');
 
 			m_sChars = new CharStream(strInput);
 		}

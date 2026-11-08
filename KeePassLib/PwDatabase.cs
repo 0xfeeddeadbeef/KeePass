@@ -424,11 +424,12 @@ namespace KeePassLib
 		}
 
 		/// <summary>
-		/// Custom data container that can be used by plugins to store
-		/// own data in KeePass databases.
-		/// The data is stored in the encrypted part of encrypted
-		/// database files.
+		/// Custom data dictionary, which can be used by plugins/ports to store
+		/// own data in the database.
 		/// Use unique names for your items, e.g. "PluginName_ItemName".
+		/// The data is stored encrypted in a KDBX file, but it is not protected
+		/// in the process memory. Sensitive data should be stored in protected
+		/// entry strings instead.
 		/// </summary>
 		public StringDictionaryEx CustomData
 		{
@@ -441,14 +442,13 @@ namespace KeePassLib
 		}
 
 		/// <summary>
-		/// Custom data container that can be used by plugins to store
-		/// own data in KeePass databases.
-		/// The data is stored in the *unencrypted* part of database files,
-		/// and it is not supported by all file formats (e.g. supported by KDBX,
-		/// unsupported by XML).
-		/// It is highly recommended to use <c>CustomData</c> instead,
-		/// if possible.
+		/// Custom data dictionary, which can be used by plugins/ports to store
+		/// own data in the database.
 		/// Use unique names for your items, e.g. "PluginName_ItemName".
+		/// The data is stored unencrypted (public) in a file, and it is not
+		/// supported by all file formats (e.g. supported by KDBX, unsupported
+		/// by XML).
+		/// It is recommended to use <c>CustomData</c> instead, if possible.
 		/// </summary>
 		public VariantDictionary PublicCustomData
 		{
@@ -869,10 +869,11 @@ namespace KeePassLib
 				{
 					Debug.Assert(mm != PwMergeMethod.CreateNewUuids);
 
-					const PwCompareOptions cmpOpt = (PwCompareOptions.IgnoreParentGroup |
-						PwCompareOptions.IgnoreLastAccess | PwCompareOptions.IgnoreHistory |
-						PwCompareOptions.NullEmptyEquivStd); // Cf. EntryUtil.GetDifferences
-					bool bEquals = peLocal.EqualsEntry(pe, cmpOpt, MemProtCmpMode.None);
+					// Cf. DiffUtil.GetDiff
+					const PwCompareOptions pco = (PwCompareOptions.NullEmptyEquivStd |
+						PwCompareOptions.IgnoreParentGroup | PwCompareOptions.IgnoreLastAccess |
+						PwCompareOptions.IgnoreHistory | PwCompareOptions.NormalizeNewLines);
+					bool bEquals = peLocal.EqualsEntry(pe, pco, MemProtCmpMode.None);
 
 					bool bOrgBackup = !bEquals;
 					if(mm != PwMergeMethod.OverwriteExisting)
@@ -2037,6 +2038,8 @@ namespace KeePassLib
 		private static List<string> g_lDupStdFields = null;
 		private static bool DupEntriesEqual(PwEntry a, PwEntry b)
 		{
+			const PwCompareOptions pco = PwCompareOptions.NormalizeNewLines;
+
 			if(g_lDupStdFields == null)
 			{
 				g_lDupStdFields = PwDefs.GetStandardFields();
@@ -2049,7 +2052,7 @@ namespace KeePassLib
 			{
 				ProtectedString psA = a.Strings.GetSafe(strStdKey);
 				ProtectedString psB = b.Strings.GetSafe(strStdKey);
-				if(!psA.Equals(psB, false)) return false;
+				if(!psA.Equals(psB, false, pco)) return false;
 			}
 
 			foreach(KeyValuePair<string, ProtectedString> kvpA in a.Strings)
@@ -2060,7 +2063,7 @@ namespace KeePassLib
 				if(psB == null) return false;
 
 				// Ignore protection setting, compare values only
-				if(!psB.Equals(kvpA.Value, false)) return false;
+				if(!psB.Equals(kvpA.Value, false, pco)) return false;
 			}
 
 			foreach(KeyValuePair<string, ProtectedString> kvpB in b.Strings)
@@ -2071,7 +2074,7 @@ namespace KeePassLib
 				if(psA == null) return false;
 
 				// Must be equal by logic
-				Debug.Assert(psA.Equals(kvpB.Value, false));
+				Debug.Assert(psA.Equals(kvpB.Value, false, pco));
 			}
 
 			if(a.Binaries.UCount != b.Binaries.UCount) return false;

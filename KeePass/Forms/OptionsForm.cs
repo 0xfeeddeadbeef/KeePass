@@ -307,6 +307,16 @@ namespace KeePass.Forms
 			if(AppConfigEx.IsOptionEnforced(aceWL, "LockAfterGlobalTime"))
 				m_cbLockAfterGlobalTime.Enabled = false;
 
+			int nClipClear = aceSec.ClipboardClearAfterSeconds;
+			if(nClipClear >= 0)
+			{
+				m_cbClipClearTime.Checked = true;
+				m_numClipClearTime.Value = nClipClear;
+			}
+			else m_cbClipClearTime.Checked = false;
+			if(AppConfigEx.IsOptionEnforced(aceSec, "ClipboardClearAfterSeconds"))
+				m_cbClipClearTime.Enabled = false;
+
 			int nDefaultExpireDays = aceDef.NewEntryExpiresInDays;
 			if(nDefaultExpireDays < 0)
 				m_cbDefaultExpireDays.Checked = false;
@@ -318,16 +328,6 @@ namespace KeePass.Forms
 			}
 			if(AppConfigEx.IsOptionEnforced(aceDef, "NewEntryExpiresInDays"))
 				m_cbDefaultExpireDays.Enabled = false;
-
-			int nClipClear = aceSec.ClipboardClearAfterSeconds;
-			if(nClipClear >= 0)
-			{
-				m_cbClipClearTime.Checked = true;
-				m_numClipClearTime.Value = nClipClear;
-			}
-			else m_cbClipClearTime.Checked = false;
-			if(AppConfigEx.IsOptionEnforced(aceSec, "ClipboardClearAfterSeconds"))
-				m_cbClipClearTime.Enabled = false;
 
 			m_lvSecurityOptions.Columns.Add(string.Empty); // Resize below
 
@@ -802,27 +802,14 @@ namespace KeePass.Forms
 
 		private void SaveOptionsPriv()
 		{
-			if(!m_cbLockAfterTime.Checked)
-				Program.Config.Security.WorkspaceLocking.LockAfterTime = 0;
-			else
-				Program.Config.Security.WorkspaceLocking.LockAfterTime =
-					(uint)m_numLockAfterTime.Value;
-
-			if(!m_cbLockAfterGlobalTime.Checked)
-				Program.Config.Security.WorkspaceLocking.LockAfterGlobalTime = 0;
-			else
-				Program.Config.Security.WorkspaceLocking.LockAfterGlobalTime =
-					(uint)m_numLockAfterGlobalTime.Value;
-
-			if(m_cbDefaultExpireDays.Checked)
-				Program.Config.Defaults.NewEntryExpiresInDays =
-					(int)m_numDefaultExpireDays.Value;
-			else Program.Config.Defaults.NewEntryExpiresInDays = -1;
-
-			if(m_cbClipClearTime.Checked)
-				Program.Config.Security.ClipboardClearAfterSeconds =
-					(int)m_numClipClearTime.Value;
-			else Program.Config.Security.ClipboardClearAfterSeconds = -1;
+			Program.Config.Security.WorkspaceLocking.LockAfterTime =
+				(m_cbLockAfterTime.Checked ? (uint)m_numLockAfterTime.Value : 0);
+			Program.Config.Security.WorkspaceLocking.LockAfterGlobalTime =
+				(m_cbLockAfterGlobalTime.Checked ? (uint)m_numLockAfterGlobalTime.Value : 0);
+			Program.Config.Security.ClipboardClearAfterSeconds =
+				(m_cbClipClearTime.Checked ? (int)m_numClipClearTime.Value : -1);
+			Program.Config.Defaults.NewEntryExpiresInDays =
+				(m_cbDefaultExpireDays.Checked ? (int)m_numDefaultExpireDays.Value : -1);
 
 			m_cdxSecurityOptions.UpdateData(true);
 			m_cdxPolicy.UpdateData(true);
@@ -833,8 +820,7 @@ namespace KeePass.Forms
 			Program.Config.UI.ToolStripRenderer = (strUuid ?? string.Empty);
 
 			if(m_cmbBannerStyle.SelectedIndex != (int)BannerStyle.Default)
-				Program.Config.UI.BannerStyle = (BannerStyle)
-					m_cmbBannerStyle.SelectedIndex;
+				Program.Config.UI.BannerStyle = (BannerStyle)m_cmbBannerStyle.SelectedIndex;
 
 			Program.Config.UI.StandardFont = m_fcgList.SelectedFont;
 			Program.Config.UI.PasswordFont = m_fcgPassword.SelectedFont;

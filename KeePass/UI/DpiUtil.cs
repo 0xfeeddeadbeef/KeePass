@@ -131,6 +131,7 @@ namespace KeePass.UI
 
 		public static void ConfigureProcess()
 		{
+#if DEBUG
 			Debug.Assert(!m_bInitialized); // Configure process before use
 			if(NativeLib.IsUnix()) return;
 
@@ -140,8 +141,6 @@ namespace KeePass.UI
 			//		"EnableWindowsFormsHighDpiAutoResizing", "true");
 			// }
 			// catch(Exception) { Debug.Assert(false); }
-#if DEBUG
-			// Ensure that the .config file enables high DPI features
 			string strExeConfig = WinUtil.GetExecutable() + ".config";
 			if(File.Exists(strExeConfig))
 			{
@@ -166,26 +165,17 @@ namespace KeePass.UI
 				}
 				else { Debug.Assert(false); } // Assembly should be loaded
 			}
-#endif
 
-			try
+			// The DPI awareness should be set in the application manifest
+			if(WinUtil.IsAtLeastWindows10) // 8.1 partially
 			{
-				// SetProcessDPIAware is obsolete; use
-				// SetProcessDpiAwareness on Windows 10 and higher
-				if(WinUtil.IsAtLeastWindows10) // 8.1 partially
-				{
-					if(NativeMethods.SetProcessDpiAwareness(
-						NativeMethods.ProcessDpiAwareness.SystemAware) < 0)
-					{
-						Debug.Assert(false);
-					}
-				}
-				else if(WinUtil.IsAtLeastWindowsVista)
-				{
-					if(!NativeMethods.SetProcessDPIAware()) { Debug.Assert(false); }
-				}
+				NativeMethods.ProcessDpiAwareness a =
+					NativeMethods.ProcessDpiAwareness.Unaware;
+				Debug.Assert(NativeMethods.GetProcessDpiAwareness(IntPtr.Zero,
+					ref a) >= 0);
+				Debug.Assert(a == NativeMethods.ProcessDpiAwareness.SystemAware);
 			}
-			catch(Exception) { Debug.Assert(false); }
+#endif
 		}
 
 		internal static void Configure(ToolStrip ts)

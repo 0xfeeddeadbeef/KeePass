@@ -234,7 +234,7 @@ namespace KeePass.UI
 
 						if(li.ListViewItemID != lTargetID) continue;
 
-						lvi.SubItems[lui.SubItem].Text = strText;
+						UIUtil.SetText(lvi.SubItems[lui.SubItem], strText);
 						break;
 					}
 				}

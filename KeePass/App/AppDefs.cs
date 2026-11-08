@@ -94,6 +94,8 @@ namespace KeePass.App
 			public static readonly string AutoType = "base/autotype";
 			public static readonly string AutoTypeObfuscation = "v2/autotype_obfuscation";
 			public static readonly string AutoTypeWindowFilters = "autowindows";
+			internal const string AutoTypeSeq = "autoseq";
+			internal const string AutoTypeSeqEx = "autoseqex";
 
 			public static readonly string Entry = "v2/entry";
 			public static readonly string EntryGeneral = "gen";
